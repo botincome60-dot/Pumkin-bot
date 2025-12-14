@@ -13,6 +13,7 @@ body {
     font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
     background: linear-gradient(135deg, var(--cream-bg) 0%, #FFE0B2 100%);
     color: #333;
+    padding-bottom: 80px; /* নেভিগেশন বারের জন্য স্পেস */
 }
 
 /* পাম্পকিন বাটন */
@@ -118,12 +119,18 @@ body {
     margin-bottom: 15px;
 }
 
-/* বটম নেভিগেশন */
+/* বটম নেভিগেশন - ফিক্সড ফর অল পেজেস */
 .pumpkin-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
     background: white;
     border-radius: 25px 25px 0 0;
     box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.1);
     padding: 15px 0;
+    z-index: 1000;
+    width: 100%;
 }
 
 .nav-item {
@@ -133,6 +140,7 @@ body {
     text-decoration: none;
     color: #666;
     transition: all 0.3s ease;
+    padding: 5px 0;
 }
 
 .nav-item.active {
@@ -294,6 +302,10 @@ body {
         grid-template-columns: repeat(2, 1fr);
         gap: 10px;
     }
+    
+    .pumpkin-nav {
+        padding: 10px 0;
+    }
 }
 
 @media (max-width: 480px) {
@@ -388,4 +400,9 @@ body {
 .pumpkin-tooltip:hover .tooltip-text {
     visibility: visible;
     opacity: 1;
+}
+
+/* মেইন কনটেইনার প্যাডিং ফর নেভিগেশন বার */
+.container {
+    padding-bottom: 80px;
 }

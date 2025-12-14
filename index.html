@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>মিষ্টি কুমড়া বট - হোম</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style-pumpkin.css">
+    <style>
+        body {
+            padding-bottom: 80px;
+            background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%);
+        }
+        
+        .pumpkin-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 25px 25px 0 0;
+            box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        
+        .pumpkin-glow {
+            animation: pumpkinGlow 2s infinite alternate;
+        }
+        
+        @keyframes pumpkinGlow {
+            from { box-shadow: 0 0 20px rgba(255, 152, 0, 0.3); }
+            to { box-shadow: 0 0 30px rgba(255, 152, 0, 0.6); }
+        }
+    </style>
+</head>
+<body class="font-sans">
+    <!-- লোডিং ওভারলে -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
+        <div class="text-center">
+            <div class="pumpkin-spinner"></div>
+            <p class="text-gray-600 mt-4 text-lg">মিষ্টি কুমড়া বট লোড হচ্ছে...</p>
+            <p class="text-gray-400 text-sm mt-2">অনুগ্রহ করে অপেক্ষা করুন</p>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-6">
+        <!-- হেডার -->
+        <div class="pumpkin-header mb-6 fade-in">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h1 class="text-2xl font-bold">🎃 মিষ্টি কুমড়া বট</h1>
+                    <p class="text-white/80 text-sm">আপনার আয়ের সহজ সমাধান</p>
+                </div>
+                <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                    <i class="fas fa-user text-xl text-white"></i>
+                </div>
+            </div>
+            
+            <div class="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
+                <p class="text-sm mb-1">আপনার ব্যালেন্স</p>
+                <h2 class="text-3xl font-bold" id="mainBalance">০.০০ টাকা</h2>
+                <p class="text-white/80 text-xs mt-2">স্বাগতম, <span id="userName">ইউজার</span></p>
+            </div>
+        </div>
+
+        <!-- দ্রুত স্ট্যাটস -->
+        <div class="pumpkin-grid mb-6">
+            <div class="pumpkin-card text-center">
+                <i class="fas fa-eye pumpkin-icon mb-2"></i>
+                <p class="text-gray-600 text-sm">আজকের এড</p>
+                <h3 class="font-bold text-lg" id="todayAds">০/১০</h3>
+            </div>
+            
+            <div class="pumpkin-card text-center">
+                <i class="fas fa-users pumpkin-icon mb-2"></i>
+                <p class="text-gray-600 text-sm">রেফারেল</p>
+                <h3 class="font-bold text-lg" id="totalReferrals">০</h3>
+            </div>
+            
+            <div class="pumpkin-card text-center">
+                <i class="fas fa-chart-line pumpkin-icon mb-2"></i>
+                <p class="text-gray-600 text-sm">মোট এড</p>
+                <h3 class="font-bold text-lg" id="totalAds">০</h3>
+            </div>
+            
+            <div class="pumpkin-card text-center">
+                <i class="fas fa-wallet pumpkin-icon mb-2"></i>
+                <p class="text-gray-600 text-sm">মোট আয়</p>
+                <h3 class="font-bold text-lg" id="totalIncome">০.০০ টাকা</h3>
+            </div>
+        </div>
+
+        <!-- দ্রুত কাজ -->
+        <div class="pumpkin-card mb-6">
+            <h3 class="text-lg font-bold mb-4 text-gray-800">দ্রুত কাজ করুন</h3>
+            
+            <div class="space-y-3">
+                <a href="tasks-pumpkin.html" class="flex items-center justify-between p-3 bg-orange-50 rounded-xl hover:bg-orange-100 transition-colors">
+                    <div class="flex items-center">
+                        <i class="fas fa-tasks text-orange-600 text-xl mr-3"></i>
+                        <div>
+                            <p class="font-semibold">টাস্ক করুন</p>
+                            <p class="text-gray-600 text-sm">আয় করুন সহজে</p>
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                </a>
+                
+                <a href="support-pumpkin.html" class="flex items-center justify-between p-3 bg-green-50 rounded-xl hover:bg-green-100 transition-colors">
+                    <div class="flex items-center">
+                        <i class="fas fa-hand-holding-usd text-green-600 text-xl mr-3"></i>
+                        <div>
+                            <p class="font-semibold">টাকা উত্তোলন</p>
+                            <p class="text-gray-600 text-sm">আপনার আয় নিন</p>
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                </a>
+                
+                <button onclick="watchTutorial()" class="w-full flex items-center justify-between p-3 bg-blue-50 rounded-xl hover:bg-blue-100 transition-colors">
+                    <div class="flex items-center">
+                        <i class="fas fa-video text-blue-600 text-xl mr-3"></i>
+                        <div>
+                            <p class="font-semibold">টিউটোরিয়াল দেখুন</p>
+                            <p class="text-gray-600 text-sm">কাজ শিখুন</p>
+                        </div>
+                    </div>
+                    <i class="fas fa-play text-blue-500"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- রেফারেল সেকশন -->
+        <div class="pumpkin-card bg-gradient-to-r from-orange-100 to-green-100 border-orange-200">
+            <h3 class="text-lg font-bold mb-3 text-gray-800">বন্ধুকে আমন্ত্রণ করুন</h3>
+            <p class="text-gray-600 text-sm mb-4">প্রতি রেফারেলে পাবেন ১০০ টাকা বোনাস</p>
+            
+            <div class="bg-white/50 rounded-xl p-3 mb-4">
+                <p class="text-gray-700 text-sm mb-1">আপনার রেফারেল লিঙ্ক</p>
+                <div class="flex items-center">
+                    <code class="text-sm font-mono flex-1 truncate bg-white/80 p-2 rounded-lg" id="referralLink">লোড হচ্ছে...</code>
+                    <button onclick="copyReferralLink()" class="ml-2 pumpkin-btn py-2 px-4 text-sm">
+                        <i class="fas fa-copy mr-1"></i> কপি
+                    </button>
+                </div>
+            </div>
+            
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-600">আপনার মোট রেফারেল</p>
+                    <p class="text-lg font-bold" id="totalReferrals2">০ জন</p>
+                </div>
+                <div class="pumpkin-badge pumpkin-badge-green">
+                    <i class="fas fa-gift mr-1"></i> ১০০ টাকা/রেফারেল
+                </div>
+            </div>
+        </div>
+
+        <!-- বিশেষ অফার -->
+        <!-- <div class="mt-6 pumpkin-card pumpkin-glow border-2 border-orange-300">
+            <div class="flex items-center justify-between mb-3">
+                <div>
+                    <span class="pumpkin-tag">বিশেষ অফার</span>
+                    <h4 class="font-bold text-gray-800 mt-1">🎁 ডাবল পেমেন্ট</h4>
+                </div>
+                <i class="fas fa-crown text-yellow-500 text-xl"></i>
+            </div>
+            <p class="text-gray-600 text-sm mb-3">প্রথম ১০০ জনের জন্য ডাবল টাকা পেমেন্ট</p>
+            <button onclick="showSpecialOffer()" class="w-full pumpkin-btn bg-gradient-to-r from-yellow-500 to-orange-500">
+                <i class="fas fa-bolt mr-2"></i>বিস্তারিত দেখুন
+            </button>
+        </div> -->
+    </div>
+
+    <!-- নেভিগেশন বার -->
+    <div class="pumpkin-nav">
+        <div class="grid grid-cols-4 gap-1 px-2 py-3">
+            <a href="index.html" class="nav-item active">
+                <i class="fas fa-home nav-icon"></i>
+                <span class="nav-label">হোম</span>
+            </a>
+            <a href="tasks-pumpkin.html" class="nav-item">
+                <i class="fas fa-tasks nav-icon"></i>
+                <span class="nav-label">টাস্ক</span>
+            </a>
+            <a href="support-pumpkin.html" class="nav-item">
+                <i class="fas fa-wallet nav-icon"></i>
+                <span class="nav-label">উইথড্র</span>
+            </a>
+            <a href="profile-pumpkin.html" class="nav-item">
+                <i class="fas fa-user nav-icon"></i>
+                <span class="nav-label">প্রোফাইল</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- সাপাবেস SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app-supabase-pumpkin.js"></script>
+
+    <script>
+        function watchTutorial() {
+            const videoLink = "https://youtu.be/XLXw5o1uU3E?si=HmuoguPxrQY4PmkH";
+            window.open(videoLink, '_blank');
+            showNotification("টিউটোরিয়াল ভিডিওটি দেখুন এবং কাজের নিয়ম শিখুন!", "info");
+        }
+
+        function showSpecialOffer() {
+            const message = `🎃 **মিষ্টি কুমড়া বট - বিশেষ অফার!**\n\n` +
+                           `💰 **ডাবল পেমেন্ট অফার**\n` +
+                           `• প্রথম ১০০ জন ইউজারের জন্য\n` +
+                           `• যেকোনো উইথড্র অ্যামাউন্ট\n` +
+                           `• পাবেন ডাবল টাকা!\n\n` +
+                           `📊 **উদাহরণ:**\n` +
+                           `• ৫০০ টাকা উইথড্র = ১০০০ টাকা\n` +
+                           `• ১০০০ টাকা উইথড্র = ২০০০ টাকা\n\n` +
+                           `⏰ **অফার শেষ:** প্রথম ১০০ জনের পর`;
+            
+            if (window.Telegram && Telegram.WebApp) {
+                Telegram.WebApp.showPopup({
+                    title: "🎁 বিশেষ অফার",
+                    message: message,
+                    buttons: [{ type: 'close' }]
+                });
+            } else {
+                alert(message);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("🎃 মিষ্টি কুমড়া বট শুরু হচ্ছে...");
+        });
+    </script>
+</body>
+</html>

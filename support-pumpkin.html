@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>মিষ্টি কুমড়া বট - টাকা উত্তোলন</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style-pumpkin.css">
+    <style>
+        body {
+            padding-bottom: 80px;
+            background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%);
+        }
+        
+        .payment-method {
+            transition: all 0.3s ease;
+            border: 2px solid #E0E0E0;
+        }
+        
+        .payment-method.active {
+            border-color: #FF9800;
+            background-color: #FFF3E0;
+            box-shadow: 0 5px 15px rgba(255, 152, 0, 0.1);
+        }
+        
+        .method-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+        
+        .bKash-icon {
+            background: linear-gradient(135deg, #E2136E, #D30F64);
+            color: white;
+        }
+        
+        .Nagad-icon {
+            background: linear-gradient(135deg, #F8A61C, #F79E1B);
+            color: white;
+        }
+        
+        .Rocket-icon {
+            background: linear-gradient(135deg, #5D2D91, #4A1E7A);
+            color: white;
+        }
+    </style>
+</head>
+<body class="font-sans">
+    <!-- লোডিং ওভারলে -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
+        <div class="text-center">
+            <div class="pumpkin-spinner"></div>
+            <p class="text-gray-600 mt-4 text-lg">লোড হচ্ছে...</p>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-6">
+        <!-- হেডার -->
+        <div class="pumpkin-header mb-6 fade-in">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold">💰 টাকা উত্তোলন</h1>
+                    <p class="text-white/80 text-sm">আপনার আয় নিন সহজে</p>
+                </div>
+                <i class="fas fa-wallet text-2xl text-white/80"></i>
+            </div>
+        </div>
+
+        <!-- ব্যালেন্স কার্ড -->
+        <div class="pumpkin-card mb-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm">আপনার ব্যালেন্স</p>
+                    <h2 class="text-3xl font-bold text-green-600" id="withdrawBalance">০.০০ টাকা</h2>
+                </div>
+                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-coins text-green-600 text-xl"></i>
+                </div>
+            </div>
+            
+            <div class="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                <div class="flex items-start">
+                    <i class="fas fa-info-circle text-yellow-500 mt-1 mr-2"></i>
+                    <p class="text-sm text-yellow-700">ন্যূনতম উত্তোলন: <strong>৫০০ টাকা</strong></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- উইথড্র ফর্ম -->
+        <div class="pumpkin-card mb-6">
+            <h3 class="text-lg font-bold mb-4 text-gray-800">টাকা উত্তোলন করুন</h3>
+            
+            <!-- পেমেন্ট মেথড -->
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-semibold mb-3">পেমেন্ট মেথড নির্বাচন করুন</label>
+                <div class="grid grid-cols-3 gap-3">
+                    <button onclick="selectMethod('bkash')" id="bkashBtn" class="payment-method active rounded-xl p-4 text-center">
+                        <div class="method-icon bKash-icon mx-auto">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <p class="font-semibold text-gray-800">bKash</p>
+                        <p class="text-xs text-gray-500 mt-1">বিকাশ</p>
+                    </button>
+                    
+                    <button onclick="selectMethod('nagad')" id="nagadBtn" class="payment-method rounded-xl p-4 text-center">
+                        <div class="method-icon Nagad-icon mx-auto">
+                            <i class="fas fa-wallet"></i>
+                        </div>
+                        <p class="font-semibold text-gray-800">Nagad</p>
+                        <p class="text-xs text-gray-500 mt-1">নগদ</p>
+                    </button>
+                    
+                    <button onclick="selectMethod('rocket')" id="rocketBtn" class="payment-method rounded-xl p-4 text-center">
+                        <div class="method-icon Rocket-icon mx-auto">
+                            <i class="fas fa-rocket"></i>
+                        </div>
+                        <p class="font-semibold text-gray-800">Rocket</p>
+                        <p class="text-xs text-gray-500 mt-1">রকেট</p>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- অ্যামাউন্ট -->
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-semibold mb-2">অ্যামাউন্ট (টাকায়)</label>
+                <input type="number" placeholder="500" id="withdrawAmount" min="500" 
+                    class="w-full pumpkin-input text-lg font-semibold text-center">
+                <p class="text-gray-500 text-xs mt-2">ন্যূনতম উত্তোলন: ৫০০ টাকা</p>
+            </div>
+            
+            <!-- অ্যাকাউন্ট নম্বর -->
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-semibold mb-2" id="accountLabel">আপনার bKash নম্বর</label>
+                <input type="text" placeholder="01XXXXXXXXX" id="accountNumber"
+                    class="w-full pumpkin-input text-center">
+                <p class="text-gray-500 text-xs mt-2">১১ ডিজিটের মোবাইল নম্বর দিন</p>
+            </div>
+            
+            <button onclick="submitWithdraw()" id="withdrawBtn" class="w-full pumpkin-btn bg-gradient-to-r from-green-500 to-green-600">
+                <i class="fas fa-paper-plane mr-2"></i>উত্তোলন রিকোয়েস্ট করুন
+            </button>
+        </div>
+
+        <!-- শর্তাবলী -->
+        <div class="pumpkin-card mb-6 bg-gradient-to-r from-orange-50 to-yellow-50 border-orange-200">
+            <h3 class="text-lg font-bold mb-3 text-gray-800">উত্তোলনের শর্তাবলী</h3>
+            <div class="space-y-2">
+                <div class="flex items-start">
+                    <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                    <p class="text-sm text-gray-700">ন্যূনতম <strong>৫০০ টাকা</strong> উত্তোলন করতে হবে</p>
+                </div>
+                <div class="flex items-start">
+                    <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                    <p class="text-sm text-gray-700">ন্যূনতম <strong>১৫টি রেফারেল</strong> প্রয়োজন</p>
+                </div>
+                <div class="flex items-start">
+                    <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                    <p class="text-sm text-gray-700">ন্যূনতম <strong>১০টি এড</strong> দেখতে হবে</p>
+                </div>
+                <div class="flex items-start">
+                    <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                    <p class="text-sm text-gray-700">পেমেন্ট <strong>২৪ ঘন্টার</strong> মধ্যে করা হবে</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- রেফারেল সেকশন -->
+        <div class="pumpkin-card bg-gradient-to-r from-green-100 to-emerald-100 border-green-200">
+            <h3 class="text-lg font-bold mb-3 text-gray-800">বন্ধুকে আমন্ত্রণ করুন</h3>
+            <p class="text-gray-600 text-sm mb-4">প্রতি রেফারেলে পাবেন ১০০ টাকা বোনাস</p>
+            
+            <div class="bg-white/50 rounded-xl p-3 mb-4">
+                <p class="text-gray-700 text-sm mb-1">আপনার রেফারেল লিঙ্ক</p>
+                <div class="flex items-center">
+                    <code class="text-sm font-mono flex-1 truncate bg-white/80 p-2 rounded-lg" id="supportReferralLink">লোড হচ্ছে...</code>
+                    <button onclick="copySupportReferral()" class="ml-2 pumpkin-btn py-2 px-4 text-sm bg-gradient-to-r from-green-500 to-green-600">
+                        <i class="fas fa-copy mr-1"></i> কপি
+                    </button>
+                </div>
+            </div>
+            
+            <div class="text-center">
+                <p class="text-sm text-gray-600">আপনার রেফারেল: <span class="font-bold" id="referralCount">০</span> জন</p>
+            </div>
+        </div>
+
+        <!-- সাপোর্ট -->
+        <div class="pumpkin-card mt-6">
+            <h3 class="text-lg font-bold mb-4 text-gray-800">সহায়তা</h3>
+            <div class="space-y-3">
+                <a href="https://t.me/mishti_kumra_support" target="_blank" class="flex items-center p-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                        <i class="fab fa-telegram text-blue-500"></i>
+                    </div>
+                    <div>
+                        <p class="font-semibold">টেলিগ্রাম সাপোর্ট</p>
+                        <p class="text-gray-600 text-sm">@mishti_kumra_support</p>
+                    </div>
+                    <i class="fas fa-external-link-alt text-gray-400 ml-auto"></i>
+                </a>
+                
+                <div class="p-3 border border-gray-200 rounded-xl">
+                    <div class="flex items-center mb-2">
+                        <i class="fas fa-clock text-orange-500 mr-2"></i>
+                        <p class="font-semibold">পেমেন্ট সময়</p>
+                    </div>
+                    <p class="text-gray-600 text-sm">উইথড্র রিকোয়েস্ট করার পর ২৪ ঘন্টার মধ্যে পেমেন্ট করা হবে</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- নেভিগেশন বার -->
+    <div class="pumpkin-nav">
+        <div class="grid grid-cols-4 gap-1 px-2 py-3">
+            <a href="index.html" class="nav-item">
+                <i class="fas fa-home nav-icon"></i>
+                <span class="nav-label">হোম</span>
+            </a>
+            <a href="tasks-pumpkin.html" class="nav-item">
+                <i class="fas fa-tasks nav-icon"></i>
+                <span class="nav-label">টাস্ক</span>
+            </a>
+            <a href="support-pumpkin.html" class="nav-item active">
+                <i class="fas fa-wallet nav-icon"></i>
+                <span class="nav-label">উইথড্র</span>
+            </a>
+            <a href="profile-pumpkin.html" class="nav-item">
+                <i class="fas fa-user nav-icon"></i>
+                <span class="nav-label">প্রোফাইল</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- সাপাবেস SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app-supabase-pumpkin.js"></script>
+
+    <script>
+        let selectedMethod = 'bkash';
+
+        function initSupportPage() {
+            const user = getUserData();
+            if (user) {
+                document.getElementById('withdrawBalance').textContent = user.balance.toFixed(2) + ' টাকা';
+                document.getElementById('supportReferralLink').textContent = generateReferralLink();
+                document.getElementById('referralCount').textContent = user.total_referrals || 0;
+            }
+            hideLoading();
+        }
+
+        function selectMethod(method) {
+            selectedMethod = method;
+            
+            // সব বাটনের active class remove
+            document.querySelectorAll('.payment-method').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // selected বাটনে active class add
+            const selectedBtn = document.getElementById(method + 'Btn');
+            selectedBtn.classList.add('active');
+            
+            // Label update
+            const methodNames = {
+                'bkash': 'bKash',
+                'nagad': 'Nagad', 
+                'rocket': 'Rocket'
+            };
+            document.getElementById('accountLabel').textContent = 'আপনার ' + methodNames[method] + ' নম্বর';
+            document.getElementById('accountNumber').placeholder = '01XXXXXXXXX';
+        }
+
+        function copySupportReferral() {
+            const refLink = document.getElementById('supportReferralLink').textContent;
+            
+            try {
+                navigator.clipboard.writeText(refLink);
+                showNotification('রেফারেল লিঙ্ক কপি করা হয়েছে!', 'success');
+            } catch (error) {
+                const tempInput = document.createElement('input');
+                tempInput.value = refLink;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+                showNotification('রেফারেল লিঙ্ক কপি করা হয়েছে!', 'success');
+            }
+        }
+
+        async function submitWithdraw() {
+            const user = getUserData();
+            if (!user) {
+                alert('ডেটা লোড হয়নি। রিফ্রেশ করুন।');
+                return;
+            }
+
+            const amount = parseInt(document.getElementById('withdrawAmount').value);
+            const accountNumber = document.getElementById('accountNumber').value.trim();
+
+            // চেক মিনিমাম অ্যামাউন্ট
+            if (!amount || amount < 500) {
+                showNotification('ন্যূনতম ৫০০ টাকা উত্তোলন করতে হবে!', 'error');
+                return;
+            }
+
+            // চেক অ্যাকাউন্ট নাম্বার
+            if (!accountNumber || accountNumber.length !== 11 || !accountNumber.startsWith('01')) {
+                showNotification('সঠিক মোবাইল নম্বর দিন (১১ ডিজিট, 01 দিয়ে শুরু)!', 'error');
+                return;
+            }
+
+            // চেক ব্যালেন্স
+            if (amount > user.balance) {
+                showNotification(`আপনার ব্যালেন্স অপর্যাপ্ত!\nআপনার ব্যালেন্স: ${user.balance.toFixed(2)} টাকা`, 'error');
+                return;
+            }
+
+            // চেক রেফারেল রিকোয়ারমেন্ট
+            if (user.total_referrals < 15) {
+                showNotification(
+                    `রেফারেল প্রয়োজন!\n\nআপনার রেফারেল: ${user.total_referrals} জন\nপ্রয়োজন: ১৫ জন\n\nআরও ${15 - user.total_referrals} জন রেফারেল প্রয়োজন।`,
+                    'error'
+                );
+                return;
+            }
+
+            // চেক AD রিকোয়ারমেন্ট
+            if (user.total_ads < 10) {
+                showNotification(
+                    `এড দেখার প্রয়োজন!\n\nআপনার দেখা এড: ${user.total_ads} টি\nপ্রয়োজন: ১০ টি\n\nআরও ${10 - user.total_ads} টি এড দেখুন।`,
+                    'error'
+                );
+                return;
+            }
+
+            // সব চেক পাস - প্রসেস উইথড্র
+            await processWithdrawRequestSupabase(amount, accountNumber);
+        }
+
+        async function processWithdrawRequestSupabase(amount, accountNumber) {
+            const user = getUserData();
+            
+            try {
+                // Show loading
+                const withdrawBtn = document.getElementById('withdrawBtn');
+                withdrawBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>প্রসেস হচ্ছে...';
+                withdrawBtn.disabled = true;
+
+                // Deduct balance from user
+                await updateUserData({
+                    balance: user.balance - amount
+                });
+
+                // Save withdraw request to Supabase
+                await saveWithdrawToSupabase(amount, accountNumber, selectedMethod);
+
+                // Success message
+                showNotification(
+                    `✅ উত্তোলন রিকোয়েস্ট সফল!\n\nপরিমাণ: ${amount} টাকা\n${getMethodName(selectedMethod)}: ${accountNumber}\n\n২৪ ঘন্টার মধ্যে পেমেন্ট করা হবে।`,
+                    'success'
+                );
+
+                // Reset form
+                document.getElementById('withdrawAmount').value = '';
+                document.getElementById('accountNumber').value = '';
+                
+                // Update balance display
+                document.getElementById('withdrawBalance').textContent = (user.balance - amount).toFixed(2) + ' টাকা';
+
+            } catch (error) {
+                console.error('Withdraw error:', error);
+                showNotification('উত্তোলন রিকোয়েস্ট ব্যর্থ! আবার চেষ্টা করুন।', 'error');
+            } finally {
+                // Reset button
+                withdrawBtn.innerHTML = '<i class="fas fa-paper-plane mr-2"></i>উত্তোলন রিকোয়েস্ট করুন';
+                withdrawBtn.disabled = false;
+            }
+        }
+
+        function getMethodName(method) {
+            const methodNames = {
+                'bkash': 'bKash',
+                'nagad': 'Nagad',
+                'rocket': 'Rocket'
+            };
+            return methodNames[method] || method;
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(initSupportPage, 1000);
+        });
+    </script>
+</body>
+</html>

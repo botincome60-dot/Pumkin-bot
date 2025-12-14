@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>মিষ্টি কুমড়া বট - প্রোফাইল</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style-pumpkin.css">
+    <style>
+        body {
+            padding-bottom: 80px;
+            background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+            border: 2px solid #FFE0B2;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(255, 152, 0, 0.1);
+        }
+        
+        .action-item {
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+        
+        .action-item:hover {
+            border-left-color: #FF9800;
+            background-color: #FFF3E0;
+        }
+        
+        .user-avatar {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body class="font-sans">
+    <!-- লোডিং ওভারলে -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
+        <div class="text-center">
+            <div class="pumpkin-spinner"></div>
+            <p class="text-gray-600 mt-4 text-lg">প্রোফাইল লোড হচ্ছে...</p>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-6">
+        <!-- প্রোফাইল হেডার -->
+        <div class="pumpkin-header mb-6 fade-in">
+            <div class="flex items-center space-x-4">
+                <div class="user-avatar">
+                    <span id="avatarText">U</span>
+                </div>
+                <div class="flex-1">
+                    <h2 class="text-xl font-bold" id="profileName">লোড হচ্ছে...</h2>
+                    <p class="text-white/80 text-sm mt-1">মিষ্টি কুমড়া বট ইউজার</p>
+                    <div class="flex items-center mt-2">
+                        <span class="text-xs bg-white/20 px-2 py-1 rounded-full">
+                            আইডি: <span id="profileUserId" class="font-mono">০</span>
+                        </span>
+                        <span class="text-xs bg-white/20 px-2 py-1 rounded-full ml-2">
+                            <i class="fas fa-calendar-alt mr-1"></i>
+                            <span id="joinDays">১</span> দিন
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- স্ট্যাটাস গ্রিড -->
+        <div class="pumpkin-card mb-6">
+            <h3 class="text-lg font-bold mb-4 text-gray-800">আপনার স্ট্যাটাস</h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <i class="fas fa-wallet text-blue-500"></i>
+                    </div>
+                    <p class="text-gray-600 text-sm">মোট আয়</p>
+                    <p class="font-bold text-lg" id="profileTotalIncome">০.০০ টাকা</p>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <i class="fas fa-eye text-green-500"></i>
+                    </div>
+                    <p class="text-gray-600 text-sm">মোট এডস</p>
+                    <p class="font-bold text-lg" id="profileTotalAds">০</p>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <i class="fas fa-users text-purple-500"></i>
+                    </div>
+                    <p class="text-gray-600 text-sm">রেফারেল</p>
+                    <p class="font-bold text-lg" id="profileReferrals">০</p>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <i class="fas fa-chart-line text-yellow-500"></i>
+                    </div>
+                    <p class="text-gray-600 text-sm">সফল উইথড্র</p>
+                    <p class="font-bold text-lg" id="withdrawCount">০</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- আজকের স্ট্যাটাস -->
+        <div class="pumpkin-card mb-6">
+            <h3 class="text-lg font-bold mb-4 text-gray-800">আজকের অ্যাক্টিভিটি</h3>
+            <div class="space-y-3">
+                <div class="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+                    <div class="flex items-center">
+                        <i class="fas fa-play-circle text-orange-500 mr-3"></i>
+                        <div>
+                            <p class="font-medium">আজকের এড</p>
+                            <p class="text-gray-600 text-sm" id="todayAdsCount">০/১০</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-medium text-green-600" id="todayEarning">০ টাকা</p>
+                        <p class="text-gray-600 text-sm">আজকের আয়</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                    <div class="flex items-center">
+                        <i class="fas fa-star text-green-500 mr-3"></i>
+                        <div>
+                            <p class="font-medium">বোনাস এড</p>
+                            <p class="text-gray-600 text-sm" id="todayBonusAds">০/১০</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-medium text-green-600" id="bonusEarning">০ টাকা</p>
+                        <p class="text-gray-600 text-sm">বোনাস আয়</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- একশন মেনু -->
+        <div class="pumpkin-card mb-6">
+            <h3 class="text-lg font-bold mb-4 text-gray-800">একশনস</h3>
+            <div class="space-y-2">
+                <a href="#" class="action-item flex items-center p-3 border border-gray-200 rounded-xl">
+                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-history text-blue-500"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-semibold">ট্রানজেকশন হিস্ট্রি</p>
+                        <p class="text-gray-600 text-sm">আপনার লেনদেনের তালিকা</p>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                </a>
+                
+                <a href="#" class="action-item flex items-center p-3 border border-gray-200 rounded-xl">
+                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-gift text-green-500"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-semibold">আপনার রিওয়ার্ডস</p>
+                        <p class="text-gray-600 text-sm">বোনাস ও উপহার</p>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                </a>
+                
+                <button onclick="shareProfile()" class="action-item w-full flex items-center p-3 border border-gray-200 rounded-xl text-left">
+                    <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-share-alt text-purple-500"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-semibold">প্রোফাইল শেয়ার করুন</p>
+                        <p class="text-gray-600 text-sm">বন্ধুদের সাথে শেয়ার করুন</p>
+                    </div>
+                    <i class="fas fa-external-link-alt text-gray-400"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- সেটিংস -->
+        <div class="pumpkin-card">
+            <h3 class="text-lg font-bold mb-4 text-gray-800">সেটিংস</h3>
+            <div class="space-y-2">
+                <a href="#" class="flex items-center p-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+                    <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-shield-alt text-yellow-500"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-semibold">প্রাইভেসি পলিসি</p>
+                        <p class="text-gray-600 text-sm">আমাদের গোপনীয়তা নীতি</p>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                </a>
+                
+                <a href="#" class="flex items-center p-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+                    <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-file-alt text-gray-500"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-semibold">টার্মস অ্যান্ড কন্ডিশন</p>
+                        <p class="text-gray-600 text-sm">সেবার শর্তাবলী</p>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                </a>
+                
+                <a href="https://t.me/mishti_kumra_support" target="_blank" class="flex items-center p-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+                    <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-headset text-red-500"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-semibold">সাপোর্ট ও সাহায্য</p>
+                        <p class="text-gray-600 text-sm">সহায়তার জন্য যোগাযোগ করুন</p>
+                    </div>
+                    <i class="fas fa-external-link-alt text-gray-400"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- লগআউট বাটন -->
+        <button onclick="logout()" class="w-full pumpkin-btn mt-6 bg-gradient-to-r from-red-500 to-red-600">
+            <i class="fas fa-sign-out-alt mr-2"></i>
+            লগ আউট
+        </button>
+    </div>
+
+    <!-- নেভিগেশন বার -->
+    <div class="pumpkin-nav">
+        <div class="grid grid-cols-4 gap-1 px-2 py-3">
+            <a href="index.html" class="nav-item">
+                <i class="fas fa-home nav-icon"></i>
+                <span class="nav-label">হোম</span>
+            </a>
+            <a href="tasks-pumpkin.html" class="nav-item">
+                <i class="fas fa-tasks nav-icon"></i>
+                <span class="nav-label">টাস্ক</span>
+            </a>
+            <a href="support-pumpkin.html" class="nav-item">
+                <i class="fas fa-wallet nav-icon"></i>
+                <span class="nav-label">উইথড্র</span>
+            </a>
+            <a href="profile-pumpkin.html" class="nav-item active">
+                <i class="fas fa-user nav-icon"></i>
+                <span class="nav-label">প্রোফাইল</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- সাপাবেস SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app-supabase-pumpkin.js"></script>
+
+    <script>
+        function initProfilePage() {
+            const user = getUserData();
+            if (user) {
+                // ব্যক্তিগত তথ্য
+                document.getElementById('profileName').textContent = user.first_name || 'ইউজার';
+                document.getElementById('avatarText').textContent = user.first_name ? user.first_name.charAt(0).toUpperCase() : 'U';
+                document.getElementById('profileUserId').textContent = user.id;
+                
+                // স্ট্যাটস
+                document.getElementById('profileTotalIncome').textContent = user.total_income.toFixed(2) + ' টাকা';
+                document.getElementById('profileTotalAds').textContent = user.total_ads;
+                document.getElementById('profileReferrals').textContent = user.total_referrals;
+                
+                // আজকের অ্যাক্টিভিটি
+                document.getElementById('todayAdsCount').textContent = `${user.today_ads || 0}/১০`;
+                document.getElementById('todayBonusAds').textContent = `${user.today_bonus_ads || 0}/১০`;
+                
+                // আয় ক্যালকুলেশন
+                const todayEarning = (user.today_ads || 0) * 30;
+                const bonusEarning = (user.today_bonus_ads || 0) * 10;
+                document.getElementById('todayEarning').textContent = todayEarning + ' টাকা';
+                document.getElementById('bonusEarning').textContent = bonusEarning + ' টাকা';
+                
+                // জয়ন দিন ক্যালকুলেশন
+                const joinDate = new Date(user.join_date || Date.now());
+                const today = new Date();
+                const diffTime = Math.abs(today - joinDate);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                document.getElementById('joinDays').textContent = diffDays;
+                
+                // Withdraw count (placeholder)
+                document.getElementById('withdrawCount').textContent = '০';
+            }
+            hideLoading();
+        }
+
+        function shareProfile() {
+            const user = getUserData();
+            if (!user) {
+                alert('ডেটা লোড হয়নি।');
+                return;
+            }
+            
+            const shareText = `🎃 মিষ্টি কুমড়া বট-এ আমার প্রোফাইল\n\n` +
+                             `👤 নাম: ${user.first_name}\n` +
+                             `💰 মোট আয়: ${user.total_income.toFixed(2)} টাকা\n` +
+                             `📊 মোট এড: ${user.total_ads}\n` +
+                             `👥 রেফারেল: ${user.total_referrals}\n\n` +
+                             `আপনিও আয় করুন: https://t.me/mishti_kumra_bot`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'মিষ্টি কুমড়া বট প্রোফাইল',
+                    text: shareText,
+                    url: 'https://t.me/mishti_kumra_bot'
+                });
+            } else {
+                navigator.clipboard.writeText(shareText).then(() => {
+                    showNotification('প্রোফাইল তথ্য কপি করা হয়েছে! শেয়ার করুন।', 'success');
+                });
+            }
+        }
+
+        function logout() {
+            if (confirm('আপনি কি লগ আউট করতে চান?')) {
+                if (window.Telegram && Telegram.WebApp) {
+                    Telegram.WebApp.close();
+                } else {
+                    alert('লগ আউট সফল!');
+                    window.location.href = 'index.html';
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(initProfilePage, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -81,6 +81,25 @@
             </div>
         </div>
 
+        <!-- পেমেন্ট প্রুফ বাটন (নতুন যোগ করা) -->
+        <div class="pumpkin-card mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-check-circle text-green-500"></i>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-gray-800">পেমেন্ট প্রুফ</p>
+                        <p class="text-gray-600 text-sm">আমাদের সফল পেমেন্ট দেখুন</p>
+                    </div>
+                </div>
+                <button onclick="viewPaymentProof()" class="pumpkin-btn bg-gradient-to-r from-green-500 to-green-600 text-sm py-2 px-4">
+                    <i class="fas fa-external-link-alt mr-1"></i>
+                    দেখুন
+                </button>
+            </div>
+        </div>
+
         <!-- দ্রুত কাজ -->
         <div class="pumpkin-card mb-6">
             <h3 class="text-lg font-bold mb-4 text-gray-800">দ্রুত কাজ করুন</h3>
@@ -118,6 +137,18 @@
                     </div>
                     <i class="fas fa-play text-blue-500"></i>
                 </button>
+
+                <!-- বিশেষ অফার (ঐচ্ছিক) -->
+                <button onclick="showSpecialOffer()" class="w-full flex items-center justify-between p-3 bg-red-50 rounded-xl hover:bg-red-100 transition-colors">
+                    <div class="flex items-center">
+                        <i class="fas fa-gift text-red-600 text-xl mr-3"></i>
+                        <div>
+                            <p class="font-semibold">বিশেষ অফার</p>
+                            <p class="text-gray-600 text-sm">ডাবল পেমেন্ট</p>
+                        </div>
+                    </div>
+                    <i class="fas fa-star text-yellow-500"></i>
+                </button>
             </div>
         </div>
 
@@ -146,6 +177,23 @@
                 </div>
             </div>
         </div>
+
+        <!-- দ্রুত সাপোর্ট -->
+        <div class="pumpkin-card mt-6">
+            <h3 class="text-lg font-bold mb-3 text-gray-800">দ্রুত সহায়তা</h3>
+            <div class="space-y-2">
+                <a href="https://t.me/mishti_kumra_support" target="_blank" class="flex items-center p-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                        <i class="fab fa-telegram text-blue-500"></i>
+                    </div>
+                    <div>
+                        <p class="font-semibold">টেলিগ্রাম সাপোর্ট</p>
+                        <p class="text-gray-600 text-sm">সহায়তা পেতে যোগাযোগ করুন</p>
+                    </div>
+                    <i class="fas fa-external-link-alt text-gray-400 ml-auto"></i>
+                </a>
+            </div>
+        </div>
     </div>
 
     <!-- নেভিগেশন বার -->
@@ -170,13 +218,26 @@
         </div>
     </div>
 
-<!-- Remove this line -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<!-- Add Firebase scripts and new app file -->
-<script src="app-firebase-pumpkin.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+    <script src="app-firebase-pumpkin.js"></script>
 
     <script>
+        // পেমেন্ট প্রুফ দেখার ফাংশন
+        function viewPaymentProof() {
+            // টেলিগ্রাম চ্যানেল লিঙ্ক
+            const telegramChannelLink = "https://t.me/mishti_kumra_official";
+            
+            // নতুন ট্যাবে লিঙ্ক ওপেন
+            window.open(telegramChannelLink, '_blank');
+            
+            // নোটিফিকেশন
+            showNotification("পেমেন্ট প্রুফ চ্যানেল দেখতে ক্লিক করুন। আমাদের সফল পেমেন্ট গুলো দেখুন!", "info");
+        }
+
         function watchTutorial() {
             const videoLink = "https://youtu.be/XLXw5o1uU3E?si=HmuoguPxrQY4PmkH";
             window.open(videoLink, '_blank');
@@ -204,6 +265,29 @@
                 alert(message);
             }
         }
+
+        // Firebase analytics for payment proof viewing (ঐচ্ছিক)
+        function trackPaymentProofView() {
+            if (typeof firebase !== 'undefined' && firebase.analytics) {
+                const user = getUserData();
+                if (user) {
+                    firebase.analytics().logEvent('view_payment_proof', {
+                        user_id: user.id,
+                        timestamp: new Date().toISOString()
+                    });
+                }
+            }
+        }
+
+        // পেমেন্ট প্রুফ বাটনে ক্লিক করার সময় ট্র্যাকিং যোগ করুন
+        document.addEventListener('DOMContentLoaded', function() {
+            const paymentProofBtn = document.querySelector('[onclick="viewPaymentProof()"]');
+            if (paymentProofBtn) {
+                paymentProofBtn.addEventListener('click', function() {
+                    setTimeout(trackPaymentProofView, 500);
+                });
+            }
+        });
 
         document.addEventListener('DOMContentLoaded', function() {
             console.log("🎃 মিষ্টি কুমড়া বট শুরু হচ্ছে...");

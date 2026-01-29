@@ -50,6 +50,31 @@
             background: linear-gradient(135deg, #5D2D91, #4A1E7A);
             color: white;
         }
+        
+        .withdraw-status {
+            padding: 15px;
+            border-radius: 12px;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+        
+        .status-pending {
+            background-color: #FFF3E0;
+            border-left: 4px solid #FF9800;
+            color: #FF9800;
+        }
+        
+        .status-approved {
+            background-color: #E8F5E9;
+            border-left: 4px solid #4CAF50;
+            color: #4CAF50;
+        }
+        
+        .status-rejected {
+            background-color: #FFEBEE;
+            border-left: 4px solid #F44336;
+            color: #F44336;
+        }
     </style>
 </head>
 <body class="font-sans">
@@ -146,27 +171,43 @@
             <button onclick="submitWithdraw()" id="withdrawBtn" class="w-full pumpkin-btn bg-gradient-to-r from-green-500 to-green-600">
                 <i class="fas fa-paper-plane mr-2"></i>উত্তোলন রিকোয়েস্ট করুন
             </button>
+            
+            <div id="withdrawStatus" class="mt-4 text-center text-sm" style="display: none;"></div>
         </div>
 
-        <!-- শর্তাবলী -->
-        <div class="pumpkin-card mb-6 bg-gradient-to-r from-orange-50 to-yellow-50 border-orange-200">
+        <!-- রিকোয়ারমেন্ট চেক -->
+        <div class="pumpkin-card mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
             <h3 class="text-lg font-bold mb-3 text-gray-800">উত্তোলনের শর্তাবলী</h3>
-            <div class="space-y-2">
-                <div class="flex items-start">
-                    <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
-                    <p class="text-sm text-gray-700">ন্যূনতম <strong>৫০০ টাকা</strong> উত্তোলন করতে হবে</p>
+            <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <i class="fas fa-users text-blue-500 mr-2"></i>
+                        <span class="text-gray-700">রেফারেল</span>
+                    </div>
+                    <span id="requirementReferrals" class="font-bold">০/১৫</span>
                 </div>
-                <div class="flex items-start">
-                    <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
-                    <p class="text-sm text-gray-700">ন্যূনতম <strong>১৫টি রেফারেল</strong> প্রয়োজন</p>
+                
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <i class="fas fa-eye text-blue-500 mr-2"></i>
+                        <span class="text-gray-700">মোট এড</span>
+                    </div>
+                    <span id="requirementAds" class="font-bold">০/১০</span>
                 </div>
-                <div class="flex items-start">
-                    <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
-                    <p class="text-sm text-gray-700">ন্যূনতম <strong>১০টি এড</strong> দেখতে হবে</p>
+                
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <i class="fas fa-money-bill text-blue-500 mr-2"></i>
+                        <span class="text-gray-700">ন্যূনতম টাকা</span>
+                    </div>
+                    <span class="font-bold text-green-600">৫০০ টাকা</span>
                 </div>
-                <div class="flex items-start">
-                    <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
-                    <p class="text-sm text-gray-700">পেমেন্ট <strong>২৪ ঘন্টার</strong> মধ্যে করা হবে</p>
+                
+                <div class="mt-3 p-2 bg-white/50 rounded-lg">
+                    <div class="flex items-center">
+                        <i class="fas fa-clock text-orange-500 mr-2"></i>
+                        <span class="text-sm text-gray-600">পেমেন্ট সময়: ২৪ ঘন্টা</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -209,10 +250,18 @@
                 <div class="p-3 border border-gray-200 rounded-xl">
                     <div class="flex items-center mb-2">
                         <i class="fas fa-clock text-orange-500 mr-2"></i>
-                        <p class="font-semibold">পেমেন্ট সময়</p>
+                        <p class="font-semibold">পেমেন্ট সময়</p>
                     </div>
                     <p class="text-gray-600 text-sm">উইথড্র রিকোয়েস্ট করার পর ২৪ ঘন্টার মধ্যে পেমেন্ট করা হবে</p>
                 </div>
+            </div>
+        </div>
+
+        <!-- উইথড্র হিস্ট্রি -->
+        <div class="pumpkin-card mt-6" id="withdrawHistorySection" style="display: none;">
+            <h3 class="text-lg font-bold mb-4 text-gray-800">আপনার উত্তোলন রিকোয়েস্ট</h3>
+            <div id="withdrawHistory">
+                <p class="text-gray-500 text-center py-4">কোনো উত্তোলন রিকোয়েস্ট পাওয়া যায়নি</p>
             </div>
         </div>
     </div>
@@ -239,37 +288,65 @@
         </div>
     </div>
 
- <!-- Remove this line -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="app-firebase-pumpkin.js"></script>
 
-<!-- Add Firebase scripts and new app file -->
-<script src="app-firebase-pumpkin.js"></script>
     <script>
         let selectedMethod = 'bkash';
+        let userWithdrawHistory = [];
 
+        // Initialize support page
         function initSupportPage() {
-            const user = getUserData();
-            if (user) {
-                document.getElementById('withdrawBalance').textContent = user.balance.toFixed(2) + ' টাকা';
-                document.getElementById('supportReferralLink').textContent = generateReferralLink();
-                document.getElementById('referralCount').textContent = user.total_referrals || 0;
-            }
+            updateSupportUI();
+            updateRequirements();
+            loadWithdrawHistory();
             hideLoading();
         }
 
+        // Update support page UI
+        function updateSupportUI() {
+            const user = getUserData();
+            if (user) {
+                document.getElementById('withdrawBalance').textContent = user.balance.toFixed(2) + ' টাকা';
+                document.getElementById('supportReferralLink').textContent = generateShareableReferralLink();
+                document.getElementById('referralCount').textContent = user.total_referrals || 0;
+            }
+        }
+
+        // Update requirements display
+        function updateRequirements() {
+            const user = getUserData();
+            if (user) {
+                const referrals = user.total_referrals || 0;
+                const ads = user.total_ads || 0;
+                
+                document.getElementById('requirementReferrals').textContent = `${referrals}/১৫`;
+                document.getElementById('requirementReferrals').className = referrals >= 15 ? 
+                    'font-bold text-green-600' : 'font-bold text-red-600';
+                
+                document.getElementById('requirementAds').textContent = `${ads}/১০`;
+                document.getElementById('requirementAds').className = ads >= 10 ? 
+                    'font-bold text-green-600' : 'font-bold text-red-600';
+            }
+        }
+
+        // Select payment method
         function selectMethod(method) {
             selectedMethod = method;
             
-            // সব বাটনের active class remove
+            // Remove active class from all buttons
             document.querySelectorAll('.payment-method').forEach(btn => {
                 btn.classList.remove('active');
             });
             
-            // selected বাটনে active class add
+            // Add active class to selected button
             const selectedBtn = document.getElementById(method + 'Btn');
             selectedBtn.classList.add('active');
             
-            // Label update
+            // Update label
             const methodNames = {
                 'bkash': 'bKash',
                 'nagad': 'Nagad', 
@@ -279,10 +356,12 @@
             document.getElementById('accountNumber').placeholder = '01XXXXXXXXX';
         }
 
+        // Copy referral link
         function copySupportReferral() {
             copyReferralLink();
         }
 
+        // Submit withdrawal request
         async function submitWithdraw() {
             const user = getUserData();
             if (!user) {
@@ -290,28 +369,28 @@
                 return;
             }
 
-            const amount = parseInt(document.getElementById('withdrawAmount').value);
+            const amount = parseFloat(document.getElementById('withdrawAmount').value);
             const accountNumber = document.getElementById('accountNumber').value.trim();
 
-            // চেক মিনিমাম অ্যামাউন্ট
+            // Validate amount
             if (!amount || amount < 500) {
                 showNotification('ন্যূনতম ৫০০ টাকা উত্তোলন করতে হবে!', 'error');
                 return;
             }
 
-            // চেক অ্যাকাউন্ট নাম্বার
+            // Validate account number
             if (!accountNumber || accountNumber.length !== 11 || !accountNumber.startsWith('01')) {
                 showNotification('সঠিক মোবাইল নম্বর দিন (১১ ডিজিট, 01 দিয়ে শুরু)!', 'error');
                 return;
             }
 
-            // চেক ব্যালেন্স
+            // Check balance
             if (amount > user.balance) {
                 showNotification(`আপনার ব্যালেন্স অপর্যাপ্ত!\nআপনার ব্যালেন্স: ${user.balance.toFixed(2)} টাকা`, 'error');
                 return;
             }
 
-            // চেক রেফারেল রিকোয়ারমেন্ট
+            // Check referral requirement
             if (user.total_referrals < 15) {
                 showNotification(
                     `রেফারেল প্রয়োজন!\n\nআপনার রেফারেল: ${user.total_referrals} জন\nপ্রয়োজন: ১৫ জন\n\nআরও ${15 - user.total_referrals} জন রেফারেল প্রয়োজন।`,
@@ -320,7 +399,7 @@
                 return;
             }
 
-            // চেক AD রিকোয়ারমেন্ট
+            // Check AD requirement
             if (user.total_ads < 10) {
                 showNotification(
                     `এড দেখার প্রয়োজন!\n\nআপনার দেখা এড: ${user.total_ads} টি\nপ্রয়োজন: ১০ টি\n\nআরও ${10 - user.total_ads} টি এড দেখুন।`,
@@ -329,11 +408,12 @@
                 return;
             }
 
-            // সব চেক পাস - প্রসেস উইথড্র
-            await processWithdrawRequestSupabase(amount, accountNumber);
+            // Process withdrawal
+            await processWithdrawRequest(amount, accountNumber);
         }
 
-        async function processWithdrawRequestSupabase(amount, accountNumber) {
+        // Process withdrawal request
+        async function processWithdrawRequest(amount, accountNumber) {
             const user = getUserData();
             
             try {
@@ -347,12 +427,15 @@
                     balance: user.balance - amount
                 });
 
-                // Save withdraw request to Supabase
-                await saveWithdrawToSupabase(amount, accountNumber, selectedMethod);
+                // Save withdraw request to Firebase
+                await saveWithdrawToFirebase(amount, accountNumber, selectedMethod);
 
                 // Success message
                 showNotification(
-                    `✅ উত্তোলন রিকোয়েস্ট সফল!\n\nপরিমাণ: ${amount} টাকা\n${getMethodName(selectedMethod)}: ${accountNumber}\n\n২৪ ঘন্টার মধ্যে পেমেন্ট করা হবে।`,
+                    `✅ উত্তোলন রিকোয়েস্ট সফল!\n\n` +
+                    `পরিমাণ: ${amount} টাকা\n` +
+                    `${getMethodName(selectedMethod)}: ${accountNumber}\n\n` +
+                    `২৪ ঘন্টার মধ্যে পেমেন্ট করা হবে।`,
                     'success'
                 );
 
@@ -362,17 +445,22 @@
                 
                 // Update balance display
                 document.getElementById('withdrawBalance').textContent = (user.balance - amount).toFixed(2) + ' টাকা';
+                
+                // Reload withdrawal history
+                await loadWithdrawHistory();
 
             } catch (error) {
                 console.error('Withdraw error:', error);
                 showNotification('উত্তোলন রিকোয়েস্ট ব্যর্থ! আবার চেষ্টা করুন।', 'error');
             } finally {
                 // Reset button
+                const withdrawBtn = document.getElementById('withdrawBtn');
                 withdrawBtn.innerHTML = '<i class="fas fa-paper-plane mr-2"></i>উত্তোলন রিকোয়েস্ট করুন';
                 withdrawBtn.disabled = false;
             }
         }
 
+        // Get method name
         function getMethodName(method) {
             const methodNames = {
                 'bkash': 'bKash',
@@ -382,6 +470,125 @@
             return methodNames[method] || method;
         }
 
+        // Load withdrawal history from Firebase
+        async function loadWithdrawHistory() {
+            try {
+                const user = getUserData();
+                if (!user || !window.db) return;
+                
+                const withdrawHistorySection = document.getElementById('withdrawHistorySection');
+                const withdrawHistoryDiv = document.getElementById('withdrawHistory');
+                
+                // Fetch withdrawals from Firebase
+                const querySnapshot = await window.db.collection('withdrawals')
+                    .where('user_id', '==', user.id)
+                    .orderBy('requested_at', 'desc')
+                    .limit(10)
+                    .get();
+                
+                userWithdrawHistory = [];
+                querySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    data.id = doc.id;
+                    userWithdrawHistory.push(data);
+                });
+                
+                if (userWithdrawHistory.length > 0) {
+                    withdrawHistorySection.style.display = 'block';
+                    withdrawHistoryDiv.innerHTML = '';
+                    
+                    userWithdrawHistory.forEach(withdrawal => {
+                        const withdrawItem = createWithdrawHistoryItem(withdrawal);
+                        withdrawHistoryDiv.appendChild(withdrawItem);
+                    });
+                } else {
+                    withdrawHistorySection.style.display = 'block';
+                    withdrawHistoryDiv.innerHTML = '<p class="text-gray-500 text-center py-4">কোনো উত্তোলন রিকোয়েস্ট পাওয়া যায়নি</p>';
+                }
+                
+            } catch (error) {
+                console.error('Error loading withdrawal history:', error);
+            }
+        }
+
+        // Create withdrawal history item
+        function createWithdrawHistoryItem(withdrawal) {
+            const div = document.createElement('div');
+            div.className = 'withdraw-item mb-3 p-3 border border-gray-200 rounded-lg';
+            
+            // Format date
+            let requestDate = 'তারিখ পাওয়া যায়নি';
+            if (withdrawal.requested_at && withdrawal.requested_at.toDate) {
+                const date = withdrawal.requested_at.toDate();
+                requestDate = date.toLocaleDateString('bn-BD', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+            
+            // Status badge
+            let statusClass = 'status-pending';
+            let statusText = 'পেন্ডিং';
+            let statusIcon = 'fas fa-clock';
+            
+            if (withdrawal.status === 'approved') {
+                statusClass = 'status-approved';
+                statusText = 'অনুমোদিত';
+                statusIcon = 'fas fa-check-circle';
+            } else if (withdrawal.status === 'rejected') {
+                statusClass = 'status-rejected';
+                statusText = 'বাতিল';
+                statusIcon = 'fas fa-times-circle';
+            } else if (withdrawal.status === 'paid') {
+                statusClass = 'status-approved';
+                statusText = 'পেইড';
+                statusIcon = 'fas fa-check-double';
+            }
+            
+            div.innerHTML = `
+                <div class="flex justify-between items-center mb-2">
+                    <div class="flex items-center">
+                        <i class="fas fa-${withdrawal.method === 'bkash' ? 'mobile-alt' : withdrawal.method === 'nagad' ? 'wallet' : 'rocket'} text-${withdrawal.method === 'bkash' ? 'pink' : withdrawal.method === 'nagad' ? 'orange' : 'purple'}-500 mr-2"></i>
+                        <span class="font-semibold">${getMethodName(withdrawal.method)}</span>
+                    </div>
+                    <div class="${statusClass} px-3 py-1 rounded-full text-xs">
+                        <i class="${statusIcon} mr-1"></i>${statusText}
+                    </div>
+                </div>
+                
+                <div class="flex justify-between mb-1">
+                    <span class="text-gray-600 text-sm">পরিমাণ:</span>
+                    <span class="font-bold">${withdrawal.amount} টাকা</span>
+                </div>
+                
+                <div class="flex justify-between mb-1">
+                    <span class="text-gray-600 text-sm">অ্যাকাউন্ট:</span>
+                    <span class="font-mono">${withdrawal.account_number}</span>
+                </div>
+                
+                <div class="flex justify-between">
+                    <span class="text-gray-600 text-sm">তারিখ:</span>
+                    <span class="text-gray-500 text-sm">${requestDate}</span>
+                </div>
+                
+                ${withdrawal.transaction_id ? `
+                <div class="mt-2 text-xs text-gray-500">
+                    <i class="fas fa-receipt mr-1"></i>
+                    ট্রানজেকশন: ${withdrawal.transaction_id}
+                </div>
+                ` : ''}
+            `;
+            
+            return div;
+        }
+
+        // Check requirements periodically
+        setInterval(updateRequirements, 30000);
+
+        // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
             setTimeout(initSupportPage, 1000);
         });

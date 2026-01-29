@@ -75,6 +75,17 @@
             border-left: 4px solid #F44336;
             color: #F44336;
         }
+        
+        .loading-skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
     </style>
 </head>
 <body class="font-sans">
@@ -288,31 +299,78 @@
         </div>
     </div>
 
-    <!-- Firebase SDK -->
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-    <script src="firebase-config.js"></script>
+    
+    <!-- Main App Script -->
     <script src="app-firebase-pumpkin.js"></script>
 
     <script>
         let selectedMethod = 'bkash';
-        let userWithdrawHistory = [];
+        let isPageInitialized = false;
 
         // Initialize support page
-        function initSupportPage() {
-            updateSupportUI();
-            updateRequirements();
-            loadWithdrawHistory();
-            hideLoading();
+        async function initSupportPage() {
+            console.log("💰 Support page initializing...");
+            
+            try {
+                // Wait for user data to be loaded
+                let attempts = 0;
+                const maxAttempts = 30; // 30 attempts = 3 seconds max
+                
+                while (attempts < maxAttempts) {
+                    const user = getUserData();
+                    if (user && user.id) {
+                        console.log("✅ User data loaded:", user);
+                        updateSupportUI();
+                        updateRequirements();
+                        break;
+                    }
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    attempts++;
+                }
+                
+                if (attempts >= maxAttempts) {
+                    console.warn("⚠️ User data not loaded after timeout");
+                    // Try to load from localStorage
+                    const userId = localStorage.getItem('currentUserId');
+                    if (userId) {
+                        const userData = JSON.parse(localStorage.getItem(`userData_${userId}`) || '{}');
+                        if (userData.id) {
+                            window.userData = userData;
+                            updateSupportUI();
+                            updateRequirements();
+                        }
+                    }
+                }
+                
+                hideLoading();
+                isPageInitialized = true;
+                
+            } catch (error) {
+                console.error("❌ Support page init error:", error);
+                hideLoading();
+            }
         }
 
         // Update support page UI
         function updateSupportUI() {
             const user = getUserData();
             if (user) {
-                document.getElementById('withdrawBalance').textContent = user.balance.toFixed(2) + ' টাকা';
-                document.getElementById('supportReferralLink').textContent = generateShareableReferralLink();
+                document.getElementById('withdrawBalance').textContent = (user.balance || 0).toFixed(2) + ' টাকা';
+                
+                // Generate referral link
+                if (user.id) {
+                    const referralLink = `https://t.me/mishti_kumra_bot/app?startapp=ref${user.id.toString().replace('test_', '')}`;
+                    document.getElementById('supportReferralLink').textContent = referralLink;
+                }
+                
                 document.getElementById('referralCount').textContent = user.total_referrals || 0;
+            } else {
+                document.getElementById('withdrawBalance').textContent = '০.০০ টাকা';
+                document.getElementById('supportReferralLink').textContent = 'https://t.me/mishti_kumra_bot';
+                document.getElementById('referralCount').textContent = '০';
             }
         }
 
@@ -363,9 +421,14 @@
 
         // Submit withdrawal request
         async function submitWithdraw() {
+            if (!isPageInitialized) {
+                alert('পেজ সম্পূর্ণ লোড হয়নি। দয়া করে অপেক্ষা করুন।');
+                return;
+            }
+
             const user = getUserData();
             if (!user) {
-                alert('ডেটা লোড হয়নি। রিফ্রেশ করুন।');
+                alert('ডেটা লোড হয়নি। পেজ রিফ্রেশ করুন।');
                 return;
             }
 
@@ -422,13 +485,13 @@
                 withdrawBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>প্রসেস হচ্ছে...';
                 withdrawBtn.disabled = true;
 
+                // Save withdraw request to Firebase
+                await saveWithdrawToFirebase(amount, accountNumber, selectedMethod);
+
                 // Deduct balance from user
                 await updateUserData({
                     balance: user.balance - amount
                 });
-
-                // Save withdraw request to Firebase
-                await saveWithdrawToFirebase(amount, accountNumber, selectedMethod);
 
                 // Success message
                 showNotification(
@@ -444,10 +507,8 @@
                 document.getElementById('accountNumber').value = '';
                 
                 // Update balance display
-                document.getElementById('withdrawBalance').textContent = (user.balance - amount).toFixed(2) + ' টাকা';
-                
-                // Reload withdrawal history
-                await loadWithdrawHistory();
+                updateSupportUI();
+                updateRequirements();
 
             } catch (error) {
                 console.error('Withdraw error:', error);
@@ -470,127 +531,25 @@
             return methodNames[method] || method;
         }
 
-        // Load withdrawal history from Firebase
-        async function loadWithdrawHistory() {
-            try {
-                const user = getUserData();
-                if (!user || !window.db) return;
-                
-                const withdrawHistorySection = document.getElementById('withdrawHistorySection');
-                const withdrawHistoryDiv = document.getElementById('withdrawHistory');
-                
-                // Fetch withdrawals from Firebase
-                const querySnapshot = await window.db.collection('withdrawals')
-                    .where('user_id', '==', user.id)
-                    .orderBy('requested_at', 'desc')
-                    .limit(10)
-                    .get();
-                
-                userWithdrawHistory = [];
-                querySnapshot.forEach(doc => {
-                    const data = doc.data();
-                    data.id = doc.id;
-                    userWithdrawHistory.push(data);
-                });
-                
-                if (userWithdrawHistory.length > 0) {
-                    withdrawHistorySection.style.display = 'block';
-                    withdrawHistoryDiv.innerHTML = '';
-                    
-                    userWithdrawHistory.forEach(withdrawal => {
-                        const withdrawItem = createWithdrawHistoryItem(withdrawal);
-                        withdrawHistoryDiv.appendChild(withdrawItem);
-                    });
-                } else {
-                    withdrawHistorySection.style.display = 'block';
-                    withdrawHistoryDiv.innerHTML = '<p class="text-gray-500 text-center py-4">কোনো উত্তোলন রিকোয়েস্ট পাওয়া যায়নি</p>';
-                }
-                
-            } catch (error) {
-                console.error('Error loading withdrawal history:', error);
-            }
-        }
-
-        // Create withdrawal history item
-        function createWithdrawHistoryItem(withdrawal) {
-            const div = document.createElement('div');
-            div.className = 'withdraw-item mb-3 p-3 border border-gray-200 rounded-lg';
-            
-            // Format date
-            let requestDate = 'তারিখ পাওয়া যায়নি';
-            if (withdrawal.requested_at && withdrawal.requested_at.toDate) {
-                const date = withdrawal.requested_at.toDate();
-                requestDate = date.toLocaleDateString('bn-BD', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-            }
-            
-            // Status badge
-            let statusClass = 'status-pending';
-            let statusText = 'পেন্ডিং';
-            let statusIcon = 'fas fa-clock';
-            
-            if (withdrawal.status === 'approved') {
-                statusClass = 'status-approved';
-                statusText = 'অনুমোদিত';
-                statusIcon = 'fas fa-check-circle';
-            } else if (withdrawal.status === 'rejected') {
-                statusClass = 'status-rejected';
-                statusText = 'বাতিল';
-                statusIcon = 'fas fa-times-circle';
-            } else if (withdrawal.status === 'paid') {
-                statusClass = 'status-approved';
-                statusText = 'পেইড';
-                statusIcon = 'fas fa-check-double';
-            }
-            
-            div.innerHTML = `
-                <div class="flex justify-between items-center mb-2">
-                    <div class="flex items-center">
-                        <i class="fas fa-${withdrawal.method === 'bkash' ? 'mobile-alt' : withdrawal.method === 'nagad' ? 'wallet' : 'rocket'} text-${withdrawal.method === 'bkash' ? 'pink' : withdrawal.method === 'nagad' ? 'orange' : 'purple'}-500 mr-2"></i>
-                        <span class="font-semibold">${getMethodName(withdrawal.method)}</span>
-                    </div>
-                    <div class="${statusClass} px-3 py-1 rounded-full text-xs">
-                        <i class="${statusIcon} mr-1"></i>${statusText}
-                    </div>
-                </div>
-                
-                <div class="flex justify-between mb-1">
-                    <span class="text-gray-600 text-sm">পরিমাণ:</span>
-                    <span class="font-bold">${withdrawal.amount} টাকা</span>
-                </div>
-                
-                <div class="flex justify-between mb-1">
-                    <span class="text-gray-600 text-sm">অ্যাকাউন্ট:</span>
-                    <span class="font-mono">${withdrawal.account_number}</span>
-                </div>
-                
-                <div class="flex justify-between">
-                    <span class="text-gray-600 text-sm">তারিখ:</span>
-                    <span class="text-gray-500 text-sm">${requestDate}</span>
-                </div>
-                
-                ${withdrawal.transaction_id ? `
-                <div class="mt-2 text-xs text-gray-500">
-                    <i class="fas fa-receipt mr-1"></i>
-                    ট্রানজেকশন: ${withdrawal.transaction_id}
-                </div>
-                ` : ''}
-            `;
-            
-            return div;
-        }
-
         // Check requirements periodically
         setInterval(updateRequirements, 30000);
 
-        // Initialize page
+        // Initialize page when DOM is loaded
         document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(initSupportPage, 1000);
+            console.log("📄 Support page DOM loaded");
+            
+            // Start initialization after a short delay
+            setTimeout(() => {
+                initSupportPage();
+            }, 500);
+        });
+
+        // Also initialize when window loads
+        window.addEventListener('load', function() {
+            console.log("🚀 Support page fully loaded");
+            if (!isPageInitialized) {
+                initSupportPage();
+            }
         });
     </script>
 </body>

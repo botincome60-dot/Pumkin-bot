@@ -57,6 +57,17 @@
             font-weight: bold;
             margin: 0 auto;
         }
+        
+        .loading-skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
     </style>
 </head>
 <body class="font-sans">
@@ -167,7 +178,7 @@
         <div class="pumpkin-card mb-6">
             <h3 class="text-lg font-bold mb-4 text-gray-800">একশনস</h3>
             <div class="space-y-2">
-                <a href="#" class="action-item flex items-center p-3 border border-gray-200 rounded-xl">
+                <button onclick="viewTransactionHistory()" class="action-item w-full flex items-center p-3 border border-gray-200 rounded-xl text-left">
                     <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                         <i class="fas fa-history text-blue-500"></i>
                     </div>
@@ -176,9 +187,9 @@
                         <p class="text-gray-600 text-sm">আপনার লেনদেনের তালিকা</p>
                     </div>
                     <i class="fas fa-chevron-right text-gray-400"></i>
-                </a>
+                </button>
                 
-                <a href="#" class="action-item flex items-center p-3 border border-gray-200 rounded-xl">
+                <button onclick="viewRewards()" class="action-item w-full flex items-center p-3 border border-gray-200 rounded-xl text-left">
                     <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
                         <i class="fas fa-gift text-green-500"></i>
                     </div>
@@ -187,7 +198,7 @@
                         <p class="text-gray-600 text-sm">বোনাস ও উপহার</p>
                     </div>
                     <i class="fas fa-chevron-right text-gray-400"></i>
-                </a>
+                </button>
                 
                 <button onclick="shareProfile()" class="action-item w-full flex items-center p-3 border border-gray-200 rounded-xl text-left">
                     <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mr-3">
@@ -206,7 +217,7 @@
         <div class="pumpkin-card">
             <h3 class="text-lg font-bold mb-4 text-gray-800">সেটিংস</h3>
             <div class="space-y-2">
-                <a href="#" class="flex items-center p-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+                <button onclick="viewPrivacyPolicy()" class="w-full flex items-center p-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-left">
                     <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center mr-3">
                         <i class="fas fa-shield-alt text-yellow-500"></i>
                     </div>
@@ -215,9 +226,9 @@
                         <p class="text-gray-600 text-sm">আমাদের গোপনীয়তা নীতি</p>
                     </div>
                     <i class="fas fa-chevron-right text-gray-400"></i>
-                </a>
+                </button>
                 
-                <a href="#" class="flex items-center p-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+                <button onclick="viewTerms()" class="w-full flex items-center p-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-left">
                     <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center mr-3">
                         <i class="fas fa-file-alt text-gray-500"></i>
                     </div>
@@ -226,7 +237,7 @@
                         <p class="text-gray-600 text-sm">সেবার শর্তাবলী</p>
                     </div>
                     <i class="fas fa-chevron-right text-gray-400"></i>
-                </a>
+                </button>
                 
                 <a href="https://t.me/mishti_kumra_support" target="_blank" class="flex items-center p-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
                     <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center mr-3">
@@ -270,24 +281,70 @@
         </div>
     </div>
 
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-<script src="firebase-config.js"></script>
-<script src="app-firebase-pumpkin.js"></script>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    
+    <!-- Main App Script -->
+    <script src="app-firebase-pumpkin.js"></script>
+
     <script>
-        function initProfilePage() {
+        let isProfileInitialized = false;
+
+        // Initialize profile page
+        async function initProfilePage() {
+            console.log("👤 Profile page initializing...");
+            
+            try {
+                // Wait for user data to be loaded
+                let attempts = 0;
+                const maxAttempts = 30; // 30 attempts = 3 seconds max
+                
+                while (attempts < maxAttempts) {
+                    const user = getUserData();
+                    if (user && user.id) {
+                        console.log("✅ User data loaded for profile:", user);
+                        updateProfileUI();
+                        break;
+                    }
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    attempts++;
+                }
+                
+                if (attempts >= maxAttempts) {
+                    console.warn("⚠️ User data not loaded after timeout for profile");
+                    // Try to load from localStorage
+                    const userId = localStorage.getItem('currentUserId');
+                    if (userId) {
+                        const userData = JSON.parse(localStorage.getItem(`userData_${userId}`) || '{}');
+                        if (userData.id) {
+                            window.userData = userData;
+                            updateProfileUI();
+                        }
+                    }
+                }
+                
+                hideLoading();
+                isProfileInitialized = true;
+                
+            } catch (error) {
+                console.error("❌ Profile page init error:", error);
+                hideLoading();
+            }
+        }
+
+        function updateProfileUI() {
             const user = getUserData();
             if (user) {
                 // ব্যক্তিগত তথ্য
                 document.getElementById('profileName').textContent = user.first_name || 'ইউজার';
                 document.getElementById('avatarText').textContent = user.first_name ? user.first_name.charAt(0).toUpperCase() : 'U';
-                document.getElementById('profileUserId').textContent = user.id;
+                document.getElementById('profileUserId').textContent = user.id ? user.id.toString().substring(0, 8) : '০';
                 
                 // স্ট্যাটস
-                document.getElementById('profileTotalIncome').textContent = user.total_income.toFixed(2) + ' টাকা';
-                document.getElementById('profileTotalAds').textContent = user.total_ads;
-                document.getElementById('profileReferrals').textContent = user.total_referrals;
+                document.getElementById('profileTotalIncome').textContent = (user.total_income || 0).toFixed(2) + ' টাকা';
+                document.getElementById('profileTotalAds').textContent = user.total_ads || 0;
+                document.getElementById('profileReferrals').textContent = user.total_referrals || 0;
                 
                 // আজকের অ্যাক্টিভিটি
                 document.getElementById('todayAdsCount').textContent = `${user.today_ads || 0}/১০`;
@@ -308,8 +365,18 @@
                 
                 // Withdraw count (placeholder)
                 document.getElementById('withdrawCount').textContent = '০';
+            } else {
+                // Default values if no user data
+                document.getElementById('profileName').textContent = 'ইউজার';
+                document.getElementById('profileTotalIncome').textContent = '০.০০ টাকা';
+                document.getElementById('profileTotalAds').textContent = '০';
+                document.getElementById('profileReferrals').textContent = '০';
+                document.getElementById('todayAdsCount').textContent = '০/১০';
+                document.getElementById('todayBonusAds').textContent = '০/১০';
+                document.getElementById('todayEarning').textContent = '০ টাকা';
+                document.getElementById('bonusEarning').textContent = '০ টাকা';
+                document.getElementById('joinDays').textContent = '১';
             }
-            hideLoading();
         }
 
         function shareProfile() {
@@ -321,9 +388,9 @@
             
             const shareText = `🎃 মিষ্টি কুমড়া বট-এ আমার প্রোফাইল\n\n` +
                              `👤 নাম: ${user.first_name}\n` +
-                             `💰 মোট আয়: ${user.total_income.toFixed(2)} টাকা\n` +
-                             `📊 মোট এড: ${user.total_ads}\n` +
-                             `👥 রেফারেল: ${user.total_referrals}\n\n` +
+                             `💰 মোট আয়: ${(user.total_income || 0).toFixed(2)} টাকা\n` +
+                             `📊 মোট এড: ${user.total_ads || 0}\n` +
+                             `👥 রেফারেল: ${user.total_referrals || 0}\n\n` +
                              `আপনিও আয় করুন: https://t.me/mishti_kumra_bot`;
             
             if (navigator.share) {
@@ -341,17 +408,46 @@
 
         function logout() {
             if (confirm('আপনি কি লগ আউট করতে চান?')) {
-                if (window.Telegram && Telegram.WebApp) {
-                    Telegram.WebApp.close();
-                } else {
-                    alert('লগ আউট সফল!');
-                    window.location.href = 'index.html';
-                }
+                // Clear local storage
+                localStorage.clear();
+                
+                // Redirect to home
+                window.location.href = 'index.html';
             }
         }
 
+        function viewTransactionHistory() {
+            alert('ট্রানজেকশন হিস্ট্রি শীঘ্রই আসছে...');
+        }
+
+        function viewRewards() {
+            alert('রিওয়ার্ডস শীঘ্রই আসছে...');
+        }
+
+        function viewPrivacyPolicy() {
+            window.open('https://t.me/mishti_kumra_support', '_blank');
+        }
+
+        function viewTerms() {
+            window.open('https://t.me/mishti_kumra_support', '_blank');
+        }
+
+        // Initialize page when DOM is loaded
         document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(initProfilePage, 1000);
+            console.log("📄 Profile page DOM loaded");
+            
+            // Start initialization after a short delay
+            setTimeout(() => {
+                initProfilePage();
+            }, 500);
+        });
+
+        // Also initialize when window loads
+        window.addEventListener('load', function() {
+            console.log("🚀 Profile page fully loaded");
+            if (!isProfileInitialized) {
+                initProfilePage();
+            }
         });
     </script>
 </body>

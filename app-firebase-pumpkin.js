@@ -1,4 +1,4 @@
-// app-firebase-pumpkin.js - মিষ্টি কুমড়া বট - FIXED REFERRAL BONUS
+// app-firebase-pumpkin.js - মিষ্টি কুমড়া বট - FIXED (No repeated messages)
 console.log("🎃 মিষ্টি কুমড়া বট লোড হচ্ছে... (Firebase)");
 
 const tg = window.Telegram?.WebApp;
@@ -18,6 +18,8 @@ const firebaseConfig = {
 let db = null;
 let userData = null;
 let currentUserId = null;
+let lastBonusCheckTime = 0; // Track when bonus was last checked
+const BONUS_CHECK_INTERVAL = 60000; // 60 seconds minimum between checks
 
 // ✅ CORRECT Referral Link Format
 function generateReferralLink() {
@@ -442,9 +444,21 @@ async function processReferralWithStartApp() {
     }
 }
 
-// ✅ FIX: Check and fix referral bonuses for current user
+// ✅ FIXED: Check and fix referral bonuses for current user (WITH COOLDOWN)
 async function checkAndFixMyReferralBonuses() {
-    if (!userData || !db) return;
+    // Check cooldown - prevent running too frequently
+    const now = Date.now();
+    if (now - lastBonusCheckTime < BONUS_CHECK_INTERVAL) {
+        console.log("⏳ বোনাস চেক কুলডাউনে আছে...");
+        return;
+    }
+    
+    lastBonusCheckTime = now;
+    
+    if (!userData || !db) {
+        console.log("❌ ইউজার ডেটা বা Firebase নেই");
+        return;
+    }
     
     console.log("🔍 আমার রেফারেল বোনাস চেক করছে...");
     
@@ -480,6 +494,7 @@ async function checkAndFixMyReferralBonuses() {
         // Each referral: +100 Taka
         const minimumExpectedBalance = 50 + (myReferralsCount * 100);
         
+        // Only show notification if there's actually missing bonus
         if (myCurrentBalance < minimumExpectedBalance) {
             const missingBonus = minimumExpectedBalance - myCurrentBalance;
             console.log(`⚠️ মিসিং বোনাস: ${missingBonus} টাকা`);
@@ -501,18 +516,22 @@ async function checkAndFixMyReferralBonuses() {
             saveUserToLocalStorage(userData.id, userData);
             
             console.log(`✅ ${missingBonus} টাকা যোগ করা হয়েছে`);
-            showNotification(`🎉 ${missingBonus} টাকা রেফারেল বোনাস আপনার একাউন্টে যোগ করা হয়েছে!`, 'success');
+            
+            // Show notification only if missing bonus is significant
+            if (missingBonus >= 100) {
+                showNotification(`🎉 ${missingBonus} টাকা রেফারেল বোনাস আপনার একাউন্টে যোগ করা হয়েছে!`, 'success');
+            }
             
             // Update UI
             updateAllPagesUI();
         } else {
             console.log("✅ সব রেফারেল বোনাস ইতিমধ্যে যোগ করা আছে");
-            showNotification("✅ আপনার সব রেফারেল বোনাস ইতিমধ্যে যোগ করা আছে!", "info");
+            // Don't show notification for this case
         }
         
     } catch (error) {
         console.error("❌ বোনাস চেক এরর:", error);
-        showNotification("❌ বোনাস চেক করতে সমস্যা হয়েছে", "error");
+        // Don't show error notification to user
     }
 }
 
@@ -528,7 +547,7 @@ async function copyReferralLink() {
     try {
         await navigator.clipboard.writeText(shareLink);
         
-        // Also check and fix referral bonuses
+        // Check and fix referral bonuses (with cooldown)
         await checkAndFixMyReferralBonuses();
         
         const referrals = userData.total_referrals || 0;
@@ -735,7 +754,11 @@ function updateResetTimers() {
 }
 
 function showNotification(message, type = 'info') {
-    alert(message);
+    // Only show notification if it's not the annoying "already added" message
+    if (!message.includes('ইতিমধ্যে যোগ করা আছে') && 
+        !message.includes('সব রেফারেল বোনাস')) {
+        alert(message);
+    }
 }
 
 function hideLoading() {
@@ -777,6 +800,32 @@ async function add100TakaManual() {
     }
 }
 
+// ✅ NEW: Simple check without annoying notifications
+async function simpleCheckReferralBonus() {
+    if (!userData || !db) return;
+    
+    try {
+        // Get referral count
+        const referralsQuery = await db.collection('referrals')
+            .where('referred_by', '==', userData.id)
+            .get();
+        
+        const referralCount = referralsQuery.size;
+        
+        // Update referral count if different
+        if (referralCount !== userData.total_referrals) {
+            await updateUserData({
+                total_referrals: referralCount
+            });
+        }
+        
+        console.log(`📊 রেফারেল কাউন্ট আপডেট: ${referralCount}`);
+        
+    } catch (error) {
+        console.error("❌ সিম্পল চেক এরর:", error);
+    }
+}
+
 // Initialize everything
 document.addEventListener('DOMContentLoaded', async function() {
     console.log("🎯 Starting app initialization...");
@@ -804,10 +853,10 @@ document.addEventListener('DOMContentLoaded', async function() {
                 setTimeout(async () => {
                     await initializeUserData();
                     
-                    // Check and fix bonuses after loading
+                    // Use simple check instead of annoying bonus check
                     setTimeout(async () => {
                         if (userData) {
-                            await checkAndFixMyReferralBonuses();
+                            await simpleCheckReferralBonus();
                         }
                     }, 3000);
                     
@@ -850,3 +899,4 @@ window.updateAllPagesUI = updateAllPagesUI;
 window.copySupportReferral = copyReferralLink;
 window.checkAndFixMyReferralBonuses = checkAndFixMyReferralBonuses;
 window.add100TakaManual = add100TakaManual;
+window.simpleCheckReferralBonus = simpleCheckReferralBonus;

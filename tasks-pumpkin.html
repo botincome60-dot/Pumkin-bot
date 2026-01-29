@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="style-pumpkin.css">
     <style>
         body {
-            padding-bottom: 80px;
+            padding-bottom: 80px !important;
             background: linear-gradient(135deg, #FFF8E1 0%, #FFECB3 100%);
         }
         
@@ -75,9 +75,7 @@
                 </div>
             </div>
         </div>
-<div class="mb-6"><a href="index.html" class="block w-full pumpkin-btn mt-6 bg-gradient-to-r from-gray-500 to-gray-600">
-            <i class="fas fa-arrow-left mr-2"></i>হোম পেজে ফিরে যান
-        </a></div>
+
         <!-- মেন এড টাস্ক -->
         <div class="pumpkin-card mb-6 task-card available">
             <div class="flex items-start justify-between mb-4">
@@ -92,23 +90,13 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-xs text-gray-500">আজকের লিমিট</p>
-                            <p class="text-sm font-medium">১০টি এড/ঘন্টা</p>
+                            <p class="text-sm font-medium">১০টি এড/দিন</p>
                         </div>
                         <div class="text-right">
                             <p class="text-xs text-gray-500">পরবর্তী রিসেট</p>
                             <p class="text-sm font-medium text-orange-600" id="resetTimer">লোড হচ্ছে...</p>
                         </div>
                     </div>
-                </div>
-            </div>
-            
-            <div class="mb-4">
-                <div class="flex justify-between text-sm mb-1">
-                    <span>আজকের প্রোগ্রেস</span>
-                    <span id="todayAds">০/১০</span>
-                </div>
-                <div class="pumpkin-progress">
-                    <div class="pumpkin-progress-fill" id="progressBar" style="width: 0%"></div>
                 </div>
             </div>
             
@@ -121,86 +109,7 @@
         <div class="pumpkin-card">
             <h3 class="text-lg font-bold mb-4 text-gray-800">🎁 বোনাস টাস্কস</h3>
             <div class="space-y-4">
-                
-                <!-- বাডাও এড -->
-                <div class="task-card limited p-4 rounded-xl border">
-                    <div class="flex items-start justify-between mb-3">
-                        <div>
-                            <div class="flex items-center mb-1">
-                                <i class="fas fa-bolt text-yellow-500 mr-2"></i>
-                                <h4 class="font-semibold">প্রিমিয়াম এড দেখুন</h4>
-                            </div>
-                            <p class="text-green-600 text-sm font-semibold">৭ টাকা/এড</p>
-                            <p class="text-gray-500 text-xs mt-1">প্রতিদিন ৫০টি এড</p>
-                        </div>
-                        <div class="text-right">
-                            <span class="text-xs font-medium text-green-600" id="badDaoTodayAds">০/৫০</span>
-                        </div>
-                    </div>
-                    <a href="bad-dao-ads-pumpkin.html" class="block w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-white py-2 rounded-lg font-semibold text-center hover:from-yellow-600 hover:to-orange-600 transition-colors">
-                        <i class="fas fa-bolt mr-2"></i>প্রিমিয়াম এড দেখুন
-                    </a>
-                </div>
-
-                <!-- বোনাস এড ১ -->
-                <div class="task-card available p-4 rounded-xl border">
-                    <div class="flex items-start justify-between mb-3">
-                        <div>
-                            <div class="flex items-center mb-1">
-                                <i class="fas fa-star text-yellow-500 mr-2"></i>
-                                <h4 class="font-semibold">বোনাস এড দেখুন</h4>
-                            </div>
-                            <p class="text-green-600 text-sm font-semibold">১০ টাকা/এড</p>
-                            <p class="text-gray-500 text-xs mt-1">প্রতি ঘন্টায় ১০টি</p>
-                        </div>
-                        <div class="text-right">
-                            <span class="text-xs font-medium text-green-600" id="bonusAdsCount">০/১০</span>
-                        </div>
-                    </div>
-                    <a href="bonus-ads-pumpkin.html" class="block w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-white py-2 rounded-lg font-semibold text-center hover:from-yellow-600 hover:to-orange-600 transition-colors">
-                        <i class="fas fa-star mr-2"></i>বোনাস এড দেখুন
-                    </a>
-                </div>
-
-                <!-- বোনাস এড ২ -->
-                <div class="task-card available p-4 rounded-xl border">
-                    <div class="flex items-start justify-between mb-3">
-                        <div>
-                            <div class="flex items-center mb-1">
-                                <i class="fas fa-gem text-purple-500 mr-2"></i>
-                                <h4 class="font-semibold">বোনাস এড ২ দেখুন</h4>
-                            </div>
-                            <p class="text-green-600 text-sm font-semibold">১০ টাকা/এড</p>
-                            <p class="text-gray-500 text-xs mt-1">প্রতি ঘন্টায় ১০টি</p>
-                        </div>
-                        <div class="text-right">
-                            <span class="text-xs font-medium text-green-600" id="bonusAdsCount2">০/১০</span>
-                        </div>
-                    </div>
-                    <a href="bonus-ads-2-pumpkin.html" class="block w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-2 rounded-lg font-semibold text-center hover:from-purple-600 hover:to-pink-600 transition-colors">
-                        <i class="fas fa-gem mr-2"></i>বোনাস এড ২ দেখুন
-                    </a>
-                </div>
-
-                <!-- স্পেশাল টাস্ক -->
-                <div class="task-card p-4 rounded-xl border border-orange-300 bg-orange-50">
-                    <div class="flex items-start justify-between mb-3">
-                        <div>
-                            <div class="flex items-center mb-1">
-                                <i class="fas fa-crown text-red-500 mr-2"></i>
-                                <h4 class="font-semibold">স্পেশাল এড দেখুন</h4>
-                                <span class="pumpkin-badge ml-2">নতুন</span>
-                            </div>
-                            <p class="text-green-600 text-sm font-semibold">১৫ টাকা/এড</p>
-                            <p class="text-gray-500 text-xs mt-1">বিশেষ অফার</p>
-                        </div>
-                    </div>
-                    <button onclick="showSpecialAd()" id="specialAdBtn" class="w-full bg-gradient-to-r from-red-500 to-pink-500 text-white py-2 rounded-lg font-semibold hover:from-red-600 hover:to-pink-600 transition-colors">
-                        <i class="fas fa-crown mr-2"></i>স্পেশাল এড দেখুন
-                    </button>
-                </div>
-
-                <!-- টেলিগ্রাম টাস্ক -->
+               <!-- টেলিগ্রাম টাস্ক -->
                 <div class="task-card p-4 rounded-xl border" id="telegramTask">
                     <div class="flex items-start justify-between mb-3">
                         <div>
@@ -230,6 +139,83 @@
                     <button onclick="completeYoutubeTask()" id="youtubeBtn" class="w-full pumpkin-btn bg-gradient-to-r from-red-500 to-red-600">
                         <i class="fab fa-youtube mr-2"></i>ক্লেইম করুন
                     </button>
+                </div> 
+                <!-- বাডাও এড -->
+                <div class="task-card limited p-4 rounded-xl border">
+                    <div class="flex items-start justify-between mb-3">
+                        <div>
+                            <div class="flex items-center mb-1">
+                                <i class="fas fa-bolt text-yellow-500 mr-2"></i>
+                                <h4 class="font-semibold">প্রিমিয়াম এড দেখুন</h4>
+                            </div>
+                            <p class="text-green-600 text-sm font-semibold">৭ টাকা/এড</p>
+                            <p class="text-gray-500 text-xs mt-1">প্রতিদিন ৫০টি এড</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs font-medium text-green-600" id="badDaoTodayAds">০/৫০</span>
+                        </div>
+                    </div>
+                    <a href="bad-dao-ads-pumpkin.html" class="block w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-white py-2 rounded-lg font-semibold text-center hover:from-yellow-600 hover:to-orange-600 transition-colors">
+                        <i class="fas fa-bolt mr-2"></i>প্রিমিয়াম এড দেখুন
+                    </a>
+                </div>
+
+                <!-- বোনাস এড ১ -->
+                <div class="task-card available p-4 rounded-xl border">
+                    <div class="flex items-start justify-between mb-3">
+                        <div>
+                            <div class="flex items-center mb-1">
+                                <i class="fas fa-star text-yellow-500 mr-2"></i>
+                                <h4 class="font-semibold">বোনাস এড দেখুন</h4>
+                            </div>
+                            <p class="text-green-600 text-sm font-semibold">১০ টাকা/এড</p>
+                            <p class="text-gray-500 text-xs mt-1">প্রতিদিন ১০টি</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs font-medium text-green-600" id="bonusAdsCount">০/১০</span>
+                        </div>
+                    </div>
+                    <a href="bonus-ads-pumpkin.html" class="block w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-white py-2 rounded-lg font-semibold text-center hover:from-yellow-600 hover:to-orange-600 transition-colors">
+                        <i class="fas fa-star mr-2"></i>বোনাস এড দেখুন
+                    </a>
+                </div>
+
+                <!-- বোনাস এড ২ -->
+                <div class="task-card available p-4 rounded-xl border">
+                    <div class="flex items-start justify-between mb-3">
+                        <div>
+                            <div class="flex items-center mb-1">
+                                <i class="fas fa-gem text-purple-500 mr-2"></i>
+                                <h4 class="font-semibold">বোনাস এড ২ দেখুন</h4>
+                            </div>
+                            <p class="text-green-600 text-sm font-semibold">১০ টাকা/এড</p>
+                            <p class="text-gray-500 text-xs mt-1">প্রতিদিন ১০টি</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs font-medium text-green-600" id="bonusAdsCount2">০/১০</span>
+                        </div>
+                    </div>
+                    <a href="bonus-ads-2-pumpkin.html" class="block w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-2 rounded-lg font-semibold text-center hover:from-purple-600 hover:to-pink-600 transition-colors">
+                        <i class="fas fa-gem mr-2"></i>বোনাস এড ২ দেখুন
+                    </a>
+                </div>
+
+                <!-- স্পেশাল টাস্ক -->
+                <div class="task-card p-4 rounded-xl border border-orange-300 bg-orange-50">
+                    <div class="flex items-start justify-between mb-3">
+                        <div>
+                            <div class="flex items-center mb-1">
+                                <i class="fas fa-crown text-red-500 mr-2"></i>
+                                <h4 class="font-semibold">স্পেশাল এড দেখুন</h4>
+                                <span class="pumpkin-badge ml-2">নতুন</span>
+                            </div>
+                            <p class="text-green-600 text-sm font-semibold">১৫ টাকা/এড</p>
+                            <p class="text-gray-500 text-xs mt-1">বিশেষ অফার</p>
+                        </div>
+                    </div>
+                    <button onclick="showSpecialAd()" id="specialAdBtn" class="w-full bg-gradient-to-r from-red-500 to-pink-500 text-white py-2 rounded-lg font-semibold hover:from-red-600 hover:to-pink-600 transition-colors">
+                        <i class="fas fa-crown mr-2"></i>স্পেশাল এড দেখুন
+                    </button>
                 </div>
 
                 <!-- ভিডিও টিউটোরিয়াল -->
@@ -256,17 +242,14 @@
         </a>
     </div>
 
-    <!-- সাপাবেস SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="app-supabase-pumpkin.js"></script>
- <!-- নেভিগেশন বার -->
+    <!-- নেভিগেশন বার -->
     <div class="pumpkin-nav">
         <div class="grid grid-cols-4 gap-1 px-2 py-3">
-            <a href="index.html" class="nav-item active">
+            <a href="index.html" class="nav-item">
                 <i class="fas fa-home nav-icon"></i>
                 <span class="nav-label">হোম</span>
             </a>
-            <a href="tasks-pumpkin.html" class="nav-item">
+            <a href="tasks-pumpkin.html" class="nav-item active">
                 <i class="fas fa-tasks nav-icon"></i>
                 <span class="nav-label">টাস্ক</span>
             </a>
@@ -280,6 +263,14 @@
             </a>
         </div>
     </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+    <script src="app-firebase-pumpkin.js"></script>
+
     <script>
         // টাস্ক স্টেট ম্যানেজমেন্ট
         const TASK_STATES = {
@@ -288,10 +279,25 @@
         };
 
         function initTasksPage() {
+            updateTaskPageUI();
+            
+            // লোড টাস্ক স্টেটস
+            loadTaskStates();
+            updateTaskButtons();
+            hideLoading();
+        }
+
+        function updateTaskPageUI() {
             const user = getUserData();
             if (user) {
-                const remaining = 10 - user.today_ads;
-                document.getElementById('adsRemaining').textContent = remaining > 0 ? remaining : 0;
+                // Calculate remaining ads correctly
+                let todayAds = user.today_ads || 0;
+                const remaining = Math.max(0, 10 - todayAds);
+                document.getElementById('adsRemaining').textContent = remaining;
+                
+                // Update bonus ads counts
+                document.getElementById('bonusAdsCount').textContent = `${user.today_bonus_ads || 0}/১০`;
+                document.getElementById('bonusAdsCount2').textContent = `${user.today_bonus_ads_2 || 0}/১০`;
                 
                 // Update reset timer
                 updateResetTimer();
@@ -299,11 +305,6 @@
                 // Load Bad Dao Ads count
                 loadBadDaoTaskCount();
             }
-
-            // লোড টাস্ক স্টেটস
-            loadTaskStates();
-            updateTaskButtons();
-            hideLoading();
         }
 
         function loadBadDaoTaskCount() {
@@ -364,13 +365,13 @@
             showNotification("টিউটোরিয়াল ভিডিওটি দেখুন এবং কাজের নিয়ম শিখুন!", "info");
         }
 
-        function completeTelegramTask() {
+        async function completeTelegramTask() {
             if (TASK_STATES.telegram) {
                 showNotification('আপনি ইতিমধ্যে এই টাস্কটি কমপ্লিট করেছেন!', 'info');
                 return;
             }
 
-            const telegramLink = "https://t.me/mishti_kumra_bot_channel";
+            const telegramLink = "https://t.me/mishti_kumra_official";
             
             window.open(telegramLink, '_blank');
             
@@ -378,18 +379,18 @@
             saveTaskStates();
             updateTaskButtons();
             
-            addTaskBonus(50, "টেলিগ্রাম চ্যানেল জয়েন");
+            await addTaskBonus(50, "টেলিগ্রাম চ্যানেল জয়েন");
             
             showNotification("টেলিগ্রাম চ্যানেলে জয়েন করুন এবং ৫০ টাকা বোনাস পান!", "info");
         }
 
-        function completeYoutubeTask() {
+        async function completeYoutubeTask() {
             if (TASK_STATES.youtube) {
                 showNotification('আপনি ইতিমধ্যে এই টাস্কটি কমপ্লিট করেছেন!', 'info');
                 return;
             }
 
-            const youtubeLink = "https://www.youtube.com/@mishtikumrabot";
+            const youtubeLink = "https://youtube.com/@mishtikumra-y8v?si=vv1r7AshZcOxTs1R";
             
             window.open(youtubeLink, '_blank');
             
@@ -397,7 +398,7 @@
             saveTaskStates();
             updateTaskButtons();
             
-            addTaskBonus(50, "ইউটিউব চ্যানেল সাবস্ক্রাইব");
+            await addTaskBonus(50, "ইউটিউব চ্যানেল সাবস্ক্রাইব");
             
             showNotification("ইউটিউব চ্যানেল সাবস্ক্রাইব করুন এবং ৫০ টাকা বোনাস পান!", "info");
         }

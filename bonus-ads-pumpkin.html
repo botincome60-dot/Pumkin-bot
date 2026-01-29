@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="style-pumpkin.css">
     <style>
         body {
-            padding-bottom: 20px;
+            padding-bottom: 80px !important;
             background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%);
         }
         
@@ -61,7 +61,7 @@
             <div class="mb-4">
                 <h3 class="text-lg font-bold mb-2">আজকের বোনাস এড</h3>
                 <div class="text-4xl font-bold text-orange-600" id="bonusAdsCounter">০/১০</div>
-                <p class="text-gray-500 text-sm mt-2" id="bonusResetTimer">প্রতি ঘন্টায় ১০টি বোনাস এড দেখতে পারবেন</p>
+                <p class="text-gray-500 text-sm mt-2" id="bonusResetTimer">প্রতিদিন ১০টি বোনাস এড দেখতে পারবেন</p>
             </div>
             
             <div class="mb-4">
@@ -130,7 +130,7 @@
                         </div>
                         <div class="flex items-start">
                             <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
-                            <p class="text-gray-600 text-sm">প্রতি ঘন্টায় ১০টি বোনাস এড দেখতে পারবেন</p>
+                            <p class="text-gray-600 text-sm">প্রতিদিন ১০টি বোনাস এড দেখতে পারবেন</p>
                         </div>
                         <div class="flex items-start">
                             <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
@@ -138,7 +138,7 @@
                         </div>
                         <div class="flex items-start">
                             <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
-                            <p class="text-gray-600 text-sm">১ ঘন্টা পর এড কাউন্টার রিসেট হবে</p>
+                            <p class="text-gray-600 text-sm">রাত ১২টায় এড কাউন্টার রিসেট হবে</p>
                         </div>
                         <div class="flex items-start">
                             <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
@@ -155,6 +155,28 @@
         </a>
     </div>
 
+    <!-- নেভিগেশন বার -->
+    <div class="pumpkin-nav">
+        <div class="grid grid-cols-4 gap-1 px-2 py-3">
+            <a href="index.html" class="nav-item">
+                <i class="fas fa-home nav-icon"></i>
+                <span class="nav-label">হোম</span>
+            </a>
+            <a href="tasks-pumpkin.html" class="nav-item active">
+                <i class="fas fa-tasks nav-icon"></i>
+                <span class="nav-label">টাস্ক</span>
+            </a>
+            <a href="support-pumpkin.html" class="nav-item">
+                <i class="fas fa-wallet nav-icon"></i>
+                <span class="nav-label">উইথড্র</span>
+            </a>
+            <a href="profile-pumpkin.html" class="nav-item">
+                <i class="fas fa-user nav-icon"></i>
+                <span class="nav-label">প্রোফাইল</span>
+            </a>
+        </div>
+    </div>
+
     <!-- কাউন্টডাউন ওভারলে -->
     <div id="countdown-overlay" class="countdown-overlay">
         <div class="text-center">
@@ -169,9 +191,11 @@
         </div>
     </div>
 
-    <!-- সাপাবেস SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="app-supabase-pumpkin.js"></script>
+<!-- Remove this line -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- Add Firebase scripts and new app file -->
+<script src="app-firebase-pumpkin.js"></script>
 
     <script>
         // Direct link এর লিস্ট
@@ -203,6 +227,7 @@
         function initBonusAdsPage() {
             updateBonusUI();
             updateBonusResetTimer();
+            hideLoading();
         }
 
         function updateBonusUI() {
@@ -218,7 +243,7 @@
                 const watchBtn = document.getElementById('watchBonusAdBtn');
                 if (!canWatchMoreBonusAds()) {
                     watchBtn.disabled = true;
-                    watchBtn.innerHTML = '<i class="fas fa-clock mr-2"></i>লিমিট শেষ';
+                    watchBtn.innerHTML = '<i class="fas fa-clock mr-2"></i>আজকের লিমিট শেষ';
                     watchBtn.classList.add('bg-gray-400');
                     watchBtn.classList.remove('from-yellow-500', 'to-orange-500');
                     document.getElementById('bonusAdStatus').textContent = 'আজকের লিমিট শেষ';
@@ -233,7 +258,7 @@
 
         function updateBonusResetTimer() {
             const timeUntilReset = getTimeUntilNextBonusReset();
-            document.getElementById('bonusResetTimer').textContent = `প্রতি ঘন্টায় ১০টি বোনাস এড দেখতে পারবেন (রিসেট: ${timeUntilReset})`;
+            document.getElementById('bonusResetTimer').textContent = `প্রতিদিন ১০টি বোনাস এড দেখতে পারবেন (রিসেট: ${timeUntilReset})`;
             document.getElementById('resetTime').textContent = `রিসেট: ${timeUntilReset}`;
         }
 
@@ -247,7 +272,7 @@
 
             // চেক করি ব্যবহারকারী আরো বোনাস এড দেখতে পারে কিনা
             if (!canWatchMoreBonusAds()) {
-                alert('আজকের বোনাস এড লিমিট শেষ! ' + getTimeUntilNextBonusReset() + ' পর আবার চেষ্টা করুন।');
+                alert('আজকের বোনাস এড লিমিট শেষ! ' + getTimeUntilNextBonusReset() + ' পর রাত ১২টায় রিসেট হবে।');
                 return;
             }
 
@@ -278,6 +303,13 @@
             
             // ট্যাব খুলো
             openedTab = window.open(selectedLink, '_blank');
+            
+            if (!openedTab) {
+                showNotification('⚠️ পপআপ ব্লক করা আছে! দয়া করে পপআপ অন করুন এবং আবার চেষ্টা করুন।', 'error');
+                resetBonusAdButton();
+                isBonusAdActive = false;
+                return;
+            }
             
             // বাটন আপডেট করো
             const watchBtn = document.getElementById('watchBonusAdBtn');
@@ -348,7 +380,7 @@
                 
                 // চেক করি লিমিট অতিক্রম করছে কিনা
                 if (newBonusAdCount > 10) {
-                    alert('আপনার বোনাস এড লিমিট শেষ হয়েছে! ১ ঘন্টা পর আবার চেষ্টা করুন।');
+                    alert('আপনার আজকের বোনাস এড লিমিট শেষ হয়েছে! রাত ১২টায় আবার চেষ্টা করুন।');
                     resetBonusAdButton();
                     isBonusAdActive = false;
                     return;
@@ -415,7 +447,7 @@
         }
 
         // প্রতি মিনিটে রিসেট টাইমার আপডেট করো
-        setInterval(updateBonusResetTimer, 30000);
+        setInterval(updateBonusResetTimer, 60000);
         
         document.addEventListener('DOMContentLoaded', function() {
             setTimeout(initBonusAdsPage, 1000);

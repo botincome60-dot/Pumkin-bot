@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="style-pumpkin.css">
     <style>
         body {
-            padding-bottom: 80px;
+            padding-bottom: 80px !important;
             background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%);
         }
         
@@ -218,9 +218,9 @@
     </div>
 
     <!-- নেভিগেশন বার -->
-      <div class="pumpkin-nav">
+    <div class="pumpkin-nav">
         <div class="grid grid-cols-4 gap-1 px-2 py-3">
-            <a href="index.html" class="nav-item active">
+            <a href="index.html" class="nav-item">
                 <i class="fas fa-home nav-icon"></i>
                 <span class="nav-label">হোম</span>
             </a>
@@ -228,7 +228,7 @@
                 <i class="fas fa-tasks nav-icon"></i>
                 <span class="nav-label">টাস্ক</span>
             </a>
-            <a href="support-pumpkin.html" class="nav-item">
+            <a href="support-pumpkin.html" class="nav-item active">
                 <i class="fas fa-wallet nav-icon"></i>
                 <span class="nav-label">উইথড্র</span>
             </a>
@@ -239,10 +239,11 @@
         </div>
     </div>
 
-    <!-- সাপাবেস SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="app-supabase-pumpkin.js"></script>
+ <!-- Remove this line -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+<!-- Add Firebase scripts and new app file -->
+<script src="app-firebase-pumpkin.js"></script>
     <script>
         let selectedMethod = 'bkash';
 
@@ -279,20 +280,7 @@
         }
 
         function copySupportReferral() {
-            const refLink = document.getElementById('supportReferralLink').textContent;
-            
-            try {
-                navigator.clipboard.writeText(refLink);
-                showNotification('রেফারেল লিঙ্ক কপি করা হয়েছে!', 'success');
-            } catch (error) {
-                const tempInput = document.createElement('input');
-                tempInput.value = refLink;
-                document.body.appendChild(tempInput);
-                tempInput.select();
-                document.execCommand('copy');
-                document.body.removeChild(tempInput);
-                showNotification('রেফারেল লিঙ্ক কপি করা হয়েছে!', 'success');
-            }
+            copyReferralLink();
         }
 
         async function submitWithdraw() {

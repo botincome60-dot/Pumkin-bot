@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="style-pumpkin.css">
     <style>
         body {
-            padding-bottom: 20px;
+            padding-bottom: 80px !important;
             background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%);
         }
         
@@ -87,7 +87,7 @@
             <div class="mb-4">
                 <h3 class="text-lg font-bold mb-2">আজকের এড কাউন্ট</h3>
                 <div class="text-4xl font-bold text-orange-600" id="adsCounter">০/১০</div>
-                <p class="text-gray-500 text-sm mt-2" id="resetTimer">প্রতি ঘন্টায় ১০টি এড দেখতে পারবেন</p>
+                <p class="text-gray-500 text-sm mt-2" id="resetTimer">প্রতিদিন ১০টি এড দেখতে পারবেন</p>
             </div>
             
             <div class="mb-4">
@@ -158,7 +158,7 @@
                         </div>
                         <div class="flex items-start">
                             <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
-                            <p class="text-gray-600 text-sm">প্রতি ঘন্টায় ১০টি এড দেখতে পারবেন</p>
+                            <p class="text-gray-600 text-sm">প্রতিদিন ১০টি এড দেখতে পারবেন</p>
                         </div>
                         <div class="flex items-start">
                             <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
@@ -179,9 +179,33 @@
         </a>
     </div>
 
-    <!-- সাপাবেস SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="app-supabase-pumpkin.js"></script>
+    <!-- নেভিগেশন বার -->
+    <div class="pumpkin-nav">
+        <div class="grid grid-cols-4 gap-1 px-2 py-3">
+            <a href="index.html" class="nav-item">
+                <i class="fas fa-home nav-icon"></i>
+                <span class="nav-label">হোম</span>
+            </a>
+            <a href="tasks-pumpkin.html" class="nav-item active">
+                <i class="fas fa-tasks nav-icon"></i>
+                <span class="nav-label">টাস্ক</span>
+            </a>
+            <a href="support-pumpkin.html" class="nav-item">
+                <i class="fas fa-wallet nav-icon"></i>
+                <span class="nav-label">উইথড্র</span>
+            </a>
+            <a href="profile-pumpkin.html" class="nav-item">
+                <i class="fas fa-user nav-icon"></i>
+                <span class="nav-label">প্রোফাইল</span>
+            </a>
+        </div>
+    </div>
+
+<!-- Remove this line -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- Add Firebase scripts and new app file -->
+<script src="app-firebase-pumpkin.js"></script>
 
     <script>
         // এড লিঙ্ক তালিকা
@@ -190,16 +214,13 @@
             "https://ferocitysuperintend.com/wzvdzr4ka?key=7a422407e8fedbc108da1c1da906f0a9",
             "https://otieu.com/4/9809044",
             "https://otieu.com/4/10095617",
-            "https://ferocitysuperintend.com/wzvdzr4ka?key=7a422407e8fedbc108da1c1da906f0a9",
-            "https://ferocitysuperintend.com/wzvdzr4ka?key=7a422407e8fedbc108da1c1da906f0a9",
             "https://otieu.com/4/9345167",
             "https://otieu.com/4/9569635",
             "https://otieu.com/4/10155431",
             "https://otieu.com/4/9550427",
             "https://ferocitysuperintend.com/img7n81xh8?key=60effca0c228e66afd204784027d8b16",
             "https://otieu.com/4/9475514",
-            "https://adexora.my.id/dl/SNIKX7EQosVmS22",
-            "https://otieu.com/4/10095617"
+            "https://adexora.my.id/dl/SNIKX7EQosVmS22"
         ];
 
         let isAdLoading = false;
@@ -216,15 +237,15 @@
         function updateUI() {
             const user = getUserData();
             if (user) {
-                document.getElementById('adsCounter').textContent = `${user.today_ads}/১০`;
-                const progress = (user.today_ads / 10) * 100;
+                document.getElementById('adsCounter').textContent = `${user.today_ads || 0}/১০`;
+                const progress = ((user.today_ads || 0) / 10) * 100;
                 document.getElementById('progressBar').style.width = `${progress}%`;
                 document.getElementById('adsProgressText').textContent = `${Math.round(progress)}%`;
                 
-                // Check if user can watch more ads
+                // Check if user can watch more ads TODAY
                 if (!canWatchMoreAds()) {
                     document.getElementById('watchAdBtn').disabled = true;
-                    document.getElementById('watchAdBtn').innerHTML = '<i class="fas fa-clock mr-2"></i>লিমিট শেষ';
+                    document.getElementById('watchAdBtn').innerHTML = '<i class="fas fa-clock mr-2"></i>আজকের লিমিট শেষ';
                     document.getElementById('watchAdBtn').classList.add('bg-gray-400');
                     document.getElementById('watchAdBtn').classList.remove('from-green-500', 'to-green-600');
                     document.getElementById('adStatus').textContent = 'আজকের লিমিট শেষ';
@@ -241,7 +262,7 @@
         function updateResetTimer() {
             const resetTimer = document.getElementById('resetTimer');
             const timeUntilReset = getTimeUntilNextReset();
-            resetTimer.textContent = `প্রতি ঘন্টায় ১০টি এড দেখতে পারবেন (রিসেট: ${timeUntilReset})`;
+            resetTimer.textContent = `প্রতিদিন ১০টি এড দেখতে পারবেন (রিসেট: ${timeUntilReset})`;
         }
 
         async function showAd() {
@@ -252,7 +273,7 @@
             }
 
             if (!canWatchMoreAds()) {
-                alert(`আপনার এড লিমিট শেষ! ${getTimeUntilNextReset()} পর আবার চেষ্টা করুন।`);
+                alert(`আপনার আজকের এড লিমিট শেষ! ${getTimeUntilNextReset()} পর রাত ১২টায় রিসেট হবে।`);
                 return;
             }
 
@@ -287,7 +308,6 @@
             }
         }
 
-        // Random ad link function
         function showAdLink() {
             return new Promise((resolve) => {
                 document.getElementById('adStatus').textContent = 'এড দেখানো হচ্ছে... ১০ সেকেন্ড অপেক্ষা করুন';
@@ -302,7 +322,7 @@
                 
                 console.log(`Selected ad index: ${randomIndex}, Link: ${selectedLink}`);
                 
-                // Open the link in new tab - WITHOUT auto-closing
+                // Open the link in new tab
                 adWindow = window.open(selectedLink, '_blank', 'width=800,height=600');
                 
                 if (!adWindow) {
@@ -326,7 +346,6 @@
                     try {
                         await rewardUserForAd();
                         
-                        // এখানে উইন্ডো বন্ধ করবো না - ব্যবহারকারী নিজে বন্ধ করবে
                         document.getElementById('adStatus').textContent = '১০ সেকেন্ড পূর্ণ! এড উইন্ডো নিজে বন্ধ করুন';
                         document.getElementById('adStatus').className = 'text-xs text-green-600';
                         
@@ -334,7 +353,7 @@
                         hideCountdownOverlay();
                         resolve();
                     }
-                }, 10000); // শুধুমাত্র ১০ সেকেন্ড
+                }, 10000);
             });
         }
 
@@ -368,27 +387,18 @@
 
         async function rewardUserForAd() {
             const user = getUserData();
-            if (!user) return;
+            if (!user) {
+                console.error("❌ No user data found");
+                return;
+            }
             
             try {
+                // Check today's limit
                 let todayAds = user.today_ads || 0;
-                let lastAdReset = user.last_ad_reset || user.join_date;
-                const lastResetTime = new Date(lastAdReset);
-                const now = new Date();
-                const hoursDiff = (now - lastResetTime) / (1000 * 60 * 60);
                 
-                console.log("Current ads:", todayAds, "Hours diff:", hoursDiff);
-                
-                // Reset if 1 hour has passed since last reset
-                if (hoursDiff >= 1) {
-                    todayAds = 0;
-                    lastAdReset = now.toISOString();
-                    console.log("Resetting counter due to time passed");
-                }
-                
-                // Check if user has reached limit
+                // Check if user has reached today's limit
                 if (todayAds >= 10) {
-                    alert('আপনার এড লিমিট শেষ হয়েছে! ১ ঘন্টা পর আবার চেষ্টা করুন।');
+                    alert('আপনার আজকের এড লিমিট শেষ হয়েছে! রাত ১২টায় আবার চেষ্টা করুন।');
                     resetAdButton();
                     isAdLoading = false;
                     return;
@@ -396,14 +406,31 @@
                 
                 // Add reward and update ads count
                 const newAdCount = todayAds + 1;
-                console.log("Updating ads count to:", newAdCount);
+                console.log("🔄 Updating today's ads count to:", newAdCount);
                 
+                // Save to localStorage immediately
+                const userLocalData = JSON.parse(localStorage.getItem('userData_local') || '{}');
+                userLocalData.today_ads = newAdCount;
+                userLocalData.total_ads = (userLocalData.total_ads || 0) + 1;
+                userLocalData.balance = (userLocalData.balance || 0) + 30;
+                userLocalData.total_income = (userLocalData.total_income || 0) + 30;
+                localStorage.setItem('userData_local', JSON.stringify(userLocalData));
+                
+                console.log("💾 Saved to localStorage:", {
+                    today_ads: newAdCount,
+                    total_ads: userLocalData.total_ads,
+                    balance: userLocalData.balance
+                });
+                
+                // Update in Supabase database
                 await updateUserData({ 
-                    balance: user.balance + 30,
+                    balance: (user.balance || 0) + 30,
                     total_income: (user.total_income || 0) + 30,
                     today_ads: newAdCount,
-                    last_ad_reset: lastAdReset
+                    total_ads: (user.total_ads || 0) + 1
                 });
+                
+                console.log("✅ Database update completed");
                 
                 // Update UI
                 updateUI();
@@ -430,9 +457,19 @@
                 
             } catch (error) {
                 console.error('❌ Error rewarding user for ad:', error);
-                document.getElementById('adStatus').textContent = 'টাকা যোগ করতে সমস্যা হয়েছে';
-                document.getElementById('adStatus').className = 'text-xs text-red-600';
-                throw error;
+                
+                // তবুও UI আপডেট করুন localStorage থেকে
+                const userLocalData = JSON.parse(localStorage.getItem('userData_local') || '{}');
+                if (userLocalData.today_ads) {
+                    updateUI();
+                    updateResetTimer();
+                    
+                    document.getElementById('rewardStatus').textContent = '৩০ টাকা যোগ হয়েছে (লোকাল স্টোরেজ)';
+                    document.getElementById('rewardStatus').className = 'text-sm text-yellow-600 font-semibold';
+                }
+                
+                showNotification('⚠️ ডেটাবেসে সমস্যা! তবে আপনার টাকা লোকাল স্টোরেজে সেভ হয়েছে।', 'warning');
+                isAdLoading = false;
             }
         }
 
@@ -450,17 +487,9 @@
             }
         }
 
-        // Update reset timer every 30 seconds
-        setInterval(updateResetTimer, 30000);
+        // Update reset timer every minute
+        setInterval(updateResetTimer, 60000);
         
-        // Check for reset every minute
-        setInterval(() => {
-            const user = getUserData();
-            if (user) {
-                updateUI();
-            }
-        }, 60000);
-
         document.addEventListener('DOMContentLoaded', function() {
             setTimeout(initAdsPage, 1000);
         });

@@ -93,6 +93,63 @@ function saveUserToLocalStorage(userId, data) {
     }
 }
 
+// ✅ FORCE REFRESH USER DATA FROM FIREBASE
+async function refreshUserDataFromFirebase() {
+    if (!userData || !userData.id || !db) return false;
+    
+    try {
+        console.log("🔄 Force refreshing user data from Firebase...");
+        
+        // Get latest data from Firebase
+        const userDoc = await db.collection('users').doc(userData.id).get();
+        
+        if (userDoc.exists) {
+            const serverData = userDoc.data();
+            
+            // Merge with local data (preserve any local changes)
+            const updatedData = { ...userData, ...serverData };
+            
+            // Ensure ID is preserved
+            updatedData.id = userData.id;
+            
+            // Update global userData
+            userData = updatedData;
+            
+            // Save to localStorage
+            saveUserToLocalStorage(userData.id, userData);
+            
+            console.log("✅ User data refreshed from Firebase");
+            console.log("- New Balance:", userData.balance);
+            
+            return true;
+        }
+    } catch (error) {
+        console.error("❌ Refresh from Firebase error:", error);
+    }
+    return false;
+}
+
+// ✅ UPDATE ALL PAGES WITH FORCE REFRESH
+async function forceUpdateAllPagesUI() {
+    if (!userData || !userData.id) return;
+    
+    try {
+        // Try to get latest data from Firebase first
+        if (db) {
+            await refreshUserDataFromFirebase();
+        }
+        
+        // Then update UI
+        updateAllPagesUI();
+        
+        console.log("✅ Force UI update completed");
+    } catch (error) {
+        console.error("❌ Force update error:", error);
+        // Fallback to normal update
+        updateAllPagesUI();
+    }
+}
+
 // Initialize user data
 async function initializeUserData() {
     console.log("🔄 ইউজার ডেটা ইনিশিয়ালাইজ হচ্ছে...");
@@ -111,6 +168,7 @@ async function initializeUserData() {
         if (localUserData && localUserData.id === currentUserId) {
             userData = localUserData;
             console.log("📱 লোকাল স্টোরেজ থেকে ডেটা লোড হয়েছে");
+            console.log("💰 Local balance:", userData.balance);
         }
         
         if (!db) {
@@ -130,14 +188,27 @@ async function initializeUserData() {
             if (userDoc.exists) {
                 const serverData = userDoc.data();
                 
+                // Check if server data is newer
+                const serverTime = new Date(serverData.last_active || 0).getTime();
+                const localTime = userData ? new Date(userData.last_active || 0).getTime() : 0;
+                
                 if (userData) {
-                    userData = { ...serverData, ...userData };
+                    // Use server data if it's newer or if balances differ significantly
+                    if (serverTime > localTime || Math.abs((serverData.balance || 0) - (userData.balance || 0)) > 10) {
+                        console.log("🔄 Server data is newer, using server data");
+                        userData = { ...serverData, ...userData };
+                    } else {
+                        // Keep local data but update with any missing fields
+                        userData = { ...serverData, ...userData };
+                    }
                 } else {
                     userData = serverData;
                 }
+                
                 userData.id = currentUserId;
                 
                 console.log("✅ Firebase থেকে ইউজার ডেটা লোড হয়েছে");
+                console.log("💰 Firebase balance:", userData.balance);
             } else {
                 if (!userData) {
                     userData = createNewUser(currentUserId);
@@ -162,7 +233,8 @@ async function initializeUserData() {
         // ✅ AUTO ADD REFERRAL BONUS ON REFRESH
         await autoAddReferralBonus();
         
-        updateAllPagesUI();
+        // Force update UI with latest data
+        await forceUpdateAllPagesUI();
         hideLoading();
         
     } catch (error) {
@@ -210,16 +282,23 @@ function createFallbackUser(userId) {
     };
 }
 
-// Update user data
+// ✅ FIXED Update user data - ENSURES SYNC ACROSS ALL PAGES
 async function updateUserData(updates) {
     if (!userData || !userData.id) return userData;
     
     try {
+        console.log("🔄 Updating user data:", updates);
+        
+        // Apply updates to local data
         Object.assign(userData, updates);
         userData.last_active = new Date().toISOString();
         
+        console.log("💰 New local balance:", userData.balance);
+        
+        // Save to localStorage FIRST
         saveUserToLocalStorage(userData.id, userData);
         
+        // Update Firebase if available
         if (db) {
             const firebaseData = { ...userData };
             delete firebaseData.id;
@@ -228,11 +307,35 @@ async function updateUserData(updates) {
             console.log("✅ Firebase আপডেট সফল");
         }
         
+        // Update UI immediately
         updateAllPagesUI();
+        
+        // Force a sync after a short delay to ensure consistency
+        setTimeout(async () => {
+            if (db && userData && userData.id) {
+                try {
+                    // Get fresh data from Firebase to confirm
+                    const userDoc = await db.collection('users').doc(userData.id).get();
+                    if (userDoc.exists) {
+                        const serverData = userDoc.data();
+                        if (Math.abs((serverData.balance || 0) - (userData.balance || 0)) > 0.01) {
+                            console.log("🔄 Balance mismatch detected, syncing...");
+                            userData.balance = serverData.balance;
+                            saveUserToLocalStorage(userData.id, userData);
+                            updateAllPagesUI();
+                        }
+                    }
+                } catch (syncError) {
+                    console.error("❌ Sync error:", syncError);
+                }
+            }
+        }, 1000);
+        
         return userData;
         
     } catch (error) {
         console.error("❌ Update error:", error);
+        // Still update local data on error
         Object.assign(userData, updates);
         saveUserToLocalStorage(userData.id, userData);
         updateAllPagesUI();
@@ -733,6 +836,38 @@ function fallbackUI() {
     });
 }
 
+// ✅ ADD PAGE LOAD SYNC FUNCTION
+async function syncUserDataOnPageLoad() {
+    if (!userData || !userData.id) return;
+    
+    console.log("🔄 Syncing user data on page load...");
+    
+    try {
+        if (db) {
+            // Get fresh data from Firebase
+            const userDoc = await db.collection('users').doc(userData.id).get();
+            if (userDoc.exists) {
+                const serverData = userDoc.data();
+                
+                // Update local data with server data
+                Object.assign(userData, serverData);
+                userData.id = userData.id; // Preserve ID
+                
+                // Save to localStorage
+                saveUserToLocalStorage(userData.id, userData);
+                
+                console.log("✅ Synced from Firebase on page load");
+                console.log("💰 Synced balance:", userData.balance);
+                
+                // Update UI
+                updateAllPagesUI();
+            }
+        }
+    } catch (error) {
+        console.error("❌ Page load sync error:", error);
+    }
+}
+
 // Initialize everything
 document.addEventListener('DOMContentLoaded', async function() {
     console.log("🎯 Starting app initialization...");
@@ -759,6 +894,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                 
                 setTimeout(async () => {
                     await initializeUserData();
+                    
+                    // Sync on page load
+                    await syncUserDataOnPageLoad();
                     
                     setInterval(() => {
                         if (userData) {
@@ -797,3 +935,5 @@ window.showNotification = showNotification;
 window.hideLoading = hideLoading;
 window.updateAllPagesUI = updateAllPagesUI;
 window.copySupportReferral = copyReferralLink;
+window.refreshUserDataFromFirebase = refreshUserDataFromFirebase;
+window.forceUpdateAllPagesUI = forceUpdateAllPagesUI;

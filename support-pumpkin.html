@@ -268,6 +268,20 @@
             </div>
         </div>
 
+        <!-- ডিবাগ বাটন (টেস্টিং এর জন্য) -->
+        <div class="pumpkin-card mt-6 bg-gradient-to-r from-gray-100 to-gray-200 border-gray-300">
+            <h3 class="text-lg font-bold mb-3 text-gray-800">ডিবাগ টুলস</h3>
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="checkCurrentBalance()" class="pumpkin-btn bg-gradient-to-r from-blue-500 to-blue-600 text-sm py-2">
+                    <i class="fas fa-bug mr-1"></i>ব্যালেন্স চেক
+                </button>
+                <button onclick="refreshUserData()" class="pumpkin-btn bg-gradient-to-r from-purple-500 to-purple-600 text-sm py-2">
+                    <i class="fas fa-sync mr-1"></i>ডেটা রিফ্রেশ
+                </button>
+            </div>
+            <p class="text-xs text-gray-500 mt-2">এই বাটনগুলি শুধুমাত্র ডিবাগিং এর জন্য</p>
+        </div>
+
         <!-- উইথড্র হিস্ট্রি -->
         <div class="pumpkin-card mt-6" id="withdrawHistorySection" style="display: none;">
             <h3 class="text-lg font-bold mb-4 text-gray-800">আপনার উত্তোলন রিকোয়েস্ট</h3>
@@ -367,6 +381,8 @@
                 }
                 
                 document.getElementById('referralCount').textContent = user.total_referrals || 0;
+                
+                console.log("🔄 UI Updated - Balance:", user.balance);
             } else {
                 document.getElementById('withdrawBalance').textContent = '০.০০ টাকা';
                 document.getElementById('supportReferralLink').textContent = 'https://t.me/mishti_kumra_bot';
@@ -417,6 +433,46 @@
         // Copy referral link
         function copySupportReferral() {
             copyReferralLink();
+        }
+
+        // Check current balance (for debugging)
+        function checkCurrentBalance() {
+            const user = getUserData();
+            if (user) {
+                const message = `💰 ব্যালেন্স ডিটেইলস:\n\n` +
+                              `ব্যালেন্স: ${user.balance.toFixed(2)} টাকা\n` +
+                              `আইডি: ${user.id}\n` +
+                              `রেফারেল: ${user.total_referrals} জন\n` +
+                              `মোট এড: ${user.total_ads} টি\n` +
+                              `মোট আয়: ${user.total_income.toFixed(2)} টাকা`;
+                
+                alert(message);
+                console.log("🔍 Balance Debug:", user);
+            } else {
+                alert("ডেটা লোড হয়নি!");
+            }
+        }
+
+        // Refresh user data
+        async function refreshUserData() {
+            console.log("🔄 Manually refreshing user data...");
+            const user = getUserData();
+            if (user && user.id) {
+                try {
+                    const userDoc = await db.collection('users').doc(user.id).get();
+                    if (userDoc.exists) {
+                        const serverData = userDoc.data();
+                        Object.assign(user, serverData);
+                        saveUserToLocalStorage(user.id, user);
+                        updateSupportUI();
+                        showNotification("✅ ডেটা রিফ্রেশ করা হয়েছে!", "success");
+                        console.log("✅ User data refreshed:", user);
+                    }
+                } catch (error) {
+                    console.error("❌ Refresh error:", error);
+                    showNotification("ডেটা রিফ্রেশ ব্যর্থ!", "error");
+                }
+            }
         }
 
         // Submit withdrawal request
@@ -475,9 +531,13 @@
             await processWithdrawRequest(amount, accountNumber);
         }
 
-        // Process withdrawal request
+        // Process withdrawal request - FIXED VERSION
         async function processWithdrawRequest(amount, accountNumber) {
             const user = getUserData();
+            if (!user) {
+                showNotification('ডেটা লোড হয়নি! পেজ রিফ্রেশ করুন।', 'error');
+                return;
+            }
             
             try {
                 // Show loading
@@ -485,19 +545,32 @@
                 withdrawBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>প্রসেস হচ্ছে...';
                 withdrawBtn.disabled = true;
 
-                // Save withdraw request to Firebase
-                await saveWithdrawToFirebase(amount, accountNumber, selectedMethod);
-
-                // Deduct balance from user
+                // FIRST: Deduct balance from user
+                const newBalance = user.balance - amount;
+                
+                console.log("💰 Withdrawal Processing:");
+                console.log("- Old Balance:", user.balance);
+                console.log("- Withdraw Amount:", amount);
+                console.log("- New Balance:", newBalance);
+                
+                // Update user data IMMEDIATELY
                 await updateUserData({
-                    balance: user.balance - amount
+                    balance: newBalance
                 });
+                
+                console.log("✅ Balance updated locally");
+
+                // THEN: Save withdraw request to Firebase
+                await saveWithdrawToFirebase(amount, accountNumber, selectedMethod);
+                
+                console.log("✅ Withdrawal request saved to Firebase");
 
                 // Success message
                 showNotification(
                     `✅ উত্তোলন রিকোয়েস্ট সফল!\n\n` +
                     `পরিমাণ: ${amount} টাকা\n` +
                     `${getMethodName(selectedMethod)}: ${accountNumber}\n\n` +
+                    `আপনার নতুন ব্যালেন্স: ${newBalance.toFixed(2)} টাকা\n` +
                     `২৪ ঘন্টার মধ্যে পেমেন্ট করা হবে।`,
                     'success'
                 );
@@ -506,18 +579,32 @@
                 document.getElementById('withdrawAmount').value = '';
                 document.getElementById('accountNumber').value = '';
                 
-                // Update balance display
+                // Update balance display IMMEDIATELY
                 updateSupportUI();
                 updateRequirements();
+
+                // Force refresh user data from Firebase
+                setTimeout(async () => {
+                    const updatedUser = getUserData();
+                    if (updatedUser) {
+                        console.log("🔄 Refreshing user data after withdrawal...");
+                        console.log("- Refreshed Balance:", updatedUser.balance);
+                        updateSupportUI();
+                    }
+                }, 1000);
 
             } catch (error) {
                 console.error('Withdraw error:', error);
                 showNotification('উত্তোলন রিকোয়েস্ট ব্যর্থ! আবার চেষ্টা করুন।', 'error');
             } finally {
                 // Reset button
-                const withdrawBtn = document.getElementById('withdrawBtn');
-                withdrawBtn.innerHTML = '<i class="fas fa-paper-plane mr-2"></i>উত্তোলন রিকোয়েস্ট করুন';
-                withdrawBtn.disabled = false;
+                setTimeout(() => {
+                    const withdrawBtn = document.getElementById('withdrawBtn');
+                    if (withdrawBtn) {
+                        withdrawBtn.innerHTML = '<i class="fas fa-paper-plane mr-2"></i>উত্তোলন রিকোয়েস্ট করুন';
+                        withdrawBtn.disabled = false;
+                    }
+                }, 2000);
             }
         }
 

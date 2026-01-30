@@ -195,7 +195,11 @@
                         </div>
                         <div class="flex items-start">
                             <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
-                            <p class="text-gray-600 text-sm">বাহিরের কোন লিঙ্ক ওপেন হবে না</p>
+                            <p class="text-gray-600 text-sm">এড উইন্ডো স্বয়ংক্রিয় বন্ধ হবে না</p>
+                        </div>
+                        <div class="flex items-start">
+                            <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                            <p class="text-gray-600 text-sm">পপআপ অন রাখুন এড দেখার জন্য</p>
                         </div>
                     </div>
                 </div>
@@ -237,11 +241,30 @@
 <script src="app-firebase-pumpkin.js"></script>
 
     <script>
+        // ✅ ADD REAL AD LINKS HERE
+        const AD_LINKS = [
+            "https://ferocitysuperintend.com/q3gtdwtif0?key=8fab9c833a59630b50874801fba88f73",
+            "https://ferocitysuperintend.com/wzvdzr4ka?key=7a422407e8fedbc108da1c1da906f0a9",
+            "https://adexora.my.id/dl/uDjmlB4uoO",
+            "https://otieu.com/4/9809044",
+            "https://otieu.com/4/10095617",
+            "https://otieu.com/4/9345167",
+            "https://otieu.com/4/9569635",
+            "https://otieu.com/4/10155431",
+            "https://adexora.my.id/dl/FroDWns7Gj",
+            "https://otieu.com/4/9550427",
+            "https://ferocitysuperintend.com/img7n81xh8?key=60effca0c228e66afd204784027d8b16",
+            "https://adexora.my.id/dl/SNIKX7EQosVmS22",
+            "https://medievalkin.com/q3gtdwtif0?key=8fab9c833a59630b50874801fba88f73",
+            "https://medievalkin.com/wzvdzr4ka?key=7a422407e8fedbc108da1c1da906f0a9"
+        ];
+        
         let isAdLoading = false;
         let adWindow = null;
         let countdownInterval;
         let currentCountdown = 10;
         let simulatedAdInterval;
+        let currentAdLink = "";
 
         function initAdsPage() {
             updateUI();
@@ -304,8 +327,8 @@
             document.getElementById('adStatus').className = 'text-xs text-yellow-600';
 
             try {
-                // Show simulated ad
-                showSimulatedAd();
+                // ✅ OPEN REAL AD LINK
+                await openRealAd();
                 
             } catch (error) {
                 console.error('❌ এড এরর:', error);
@@ -319,40 +342,39 @@
             }
         }
 
-        function showSimulatedAd() {
-            // Show simulated ad container
-            const simulatedAd = document.getElementById('simulatedAd');
-            simulatedAd.style.display = 'block';
+        // ✅ FUNCTION TO OPEN REAL AD LINK
+        async function openRealAd() {
+            // Randomly select an ad link
+            const randomIndex = Math.floor(Math.random() * AD_LINKS.length);
+            currentAdLink = AD_LINKS[randomIndex];
             
-            // Scroll to ad
-            simulatedAd.scrollIntoView({ behavior: 'smooth' });
+            console.log("🔗 Opening ad:", currentAdLink);
             
-            // Disable watch button
             const watchBtn = document.getElementById('watchAdBtn');
             watchBtn.innerHTML = '<i class="fas fa-eye mr-2"></i>এড চলছে...';
             
             document.getElementById('adStatus').textContent = 'এড দেখানো হচ্ছে... ১০ সেকেন্ড অপেক্ষা করুন';
             document.getElementById('adStatus').className = 'text-xs text-blue-600';
             
-            // Start countdown
+            // Show countdown overlay
             showCountdownOverlay();
             
-            // Start simulated ad timer
-            let adTime = 10;
-            const timerElement = document.getElementById('simulatedTimer');
-            const progressElement = document.getElementById('simulatedProgress');
+            // ✅ OPEN AD IN NEW TAB
+            adWindow = window.open(currentAdLink, '_blank');
             
-            simulatedAdInterval = setInterval(() => {
-                adTime--;
-                timerElement.textContent = adTime + ' সেকেন্ড';
-                const progress = ((10 - adTime) / 10) * 100;
-                progressElement.style.width = progress + '%';
-                
-                if (adTime <= 0) {
-                    clearInterval(simulatedAdInterval);
-                    finishAdWatching();
-                }
-            }, 1000);
+            if (!adWindow) {
+                // If popup blocked, show alert
+                showNotification('⚠️ পপআপ ব্লক করা আছে! দয়া করে পপআপ অন করুন এবং আবার চেষ্টা করুন।', 'warning');
+                resetAdButton();
+                isAdLoading = false;
+                hideCountdownOverlay();
+                return;
+            }
+            
+            showNotification('✅ এড খোলা হয়েছে! ১০ সেকেন্ড অপেক্ষা করুন...', 'info');
+            
+            // Start countdown
+            startAdCountdown();
         }
 
         function showCountdownOverlay() {
@@ -364,15 +386,6 @@
             currentCountdown = 10;
             countdownNumber.textContent = currentCountdown;
             countdownText.textContent = 'এডটি দেখা হচ্ছে!';
-            
-            countdownInterval = setInterval(() => {
-                currentCountdown--;
-                countdownNumber.textContent = currentCountdown;
-                
-                if (currentCountdown <= 0) {
-                    clearInterval(countdownInterval);
-                }
-            }, 1000);
         }
 
         function hideCountdownOverlay() {
@@ -383,18 +396,30 @@
             }
         }
 
+        function startAdCountdown() {
+            countdownInterval = setInterval(() => {
+                currentCountdown--;
+                document.getElementById('countdownNumber').textContent = currentCountdown;
+                
+                if (currentCountdown <= 0) {
+                    clearInterval(countdownInterval);
+                    finishAdWatching();
+                }
+            }, 1000);
+        }
+
         async function finishAdWatching() {
-            // Hide simulated ad
-            const simulatedAd = document.getElementById('simulatedAd');
-            simulatedAd.style.display = 'none';
-            
-            // Clear simulated ad interval
-            if (simulatedAdInterval) {
-                clearInterval(simulatedAdInterval);
-            }
-            
             // Hide countdown overlay
             hideCountdownOverlay();
+            
+            // Try to close the ad window
+            try {
+                if (adWindow && !adWindow.closed) {
+                    adWindow.close();
+                }
+            } catch (error) {
+                console.log("⚠️ Could not close ad window:", error);
+            }
             
             // Give reward
             await rewardUserForAd();

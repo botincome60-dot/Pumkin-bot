@@ -129,6 +129,40 @@ async function refreshUserDataFromFirebase() {
     return false;
 }
 
+// ✅ FORCE BALANCE SYNC FROM FIREBASE
+async function syncBalanceFromFirebase() {
+    if (!userData || !userData.id || !db) return false;
+    
+    try {
+        console.log("🔄 Syncing balance from Firebase...");
+        
+        const userDoc = await db.collection('users').doc(userData.id).get();
+        
+        if (userDoc.exists) {
+            const serverData = userDoc.data();
+            const serverBalance = serverData.balance || 0;
+            const localBalance = userData.balance || 0;
+            
+            console.log("💸 Balance Comparison:");
+            console.log("- Local Balance:", localBalance);
+            console.log("- Server Balance:", serverBalance);
+            
+            if (Math.abs(serverBalance - localBalance) > 0.01) {
+                console.log("⚠️ Balance mismatch detected!");
+                userData.balance = serverBalance;
+                saveUserToLocalStorage(userData.id, userData);
+                updateAllPagesUI();
+                console.log("✅ Balance synced from Firebase");
+                return true;
+            }
+        }
+        return false;
+    } catch (error) {
+        console.error("❌ Balance sync error:", error);
+        return false;
+    }
+}
+
 // ✅ UPDATE ALL PAGES WITH FORCE REFRESH
 async function forceUpdateAllPagesUI() {
     if (!userData || !userData.id) return;
@@ -282,64 +316,156 @@ function createFallbackUser(userId) {
     };
 }
 
-// ✅ FIXED Update user data - ENSURES SYNC ACROSS ALL PAGES
+// ✅ FIXED Update user data - ENSURES BALANCE SYNC
 async function updateUserData(updates) {
     if (!userData || !userData.id) return userData;
     
     try {
         console.log("🔄 Updating user data:", updates);
         
-        // Apply updates to local data
+        // Special handling for balance updates
+        if (updates.balance !== undefined) {
+            console.log("💰 Balance update requested:", updates.balance);
+            
+            // Apply balance update to local data
+            userData.balance = updates.balance;
+            userData.last_active = new Date().toISOString();
+            
+            // Save to localStorage
+            saveUserToLocalStorage(userData.id, userData);
+            
+            // Update Firebase if available
+            if (db) {
+                await db.collection('users').doc(userData.id).update({
+                    balance: updates.balance,
+                    last_active: new Date().toISOString()
+                });
+                console.log("✅ Balance updated in Firebase");
+            }
+            
+            // Update UI immediately
+            updateAllPagesUI();
+            return userData;
+        }
+        
+        // Normal updates for other fields
         Object.assign(userData, updates);
         userData.last_active = new Date().toISOString();
         
-        console.log("💰 New local balance:", userData.balance);
-        
-        // Save to localStorage FIRST
         saveUserToLocalStorage(userData.id, userData);
         
-        // Update Firebase if available
         if (db) {
-            const firebaseData = { ...userData };
-            delete firebaseData.id;
+            const firebaseData = { ...updates };
+            firebaseData.last_active = new Date().toISOString();
             
             await db.collection('users').doc(userData.id).update(firebaseData);
             console.log("✅ Firebase আপডেট সফল");
         }
         
-        // Update UI immediately
         updateAllPagesUI();
-        
-        // Force a sync after a short delay to ensure consistency
-        setTimeout(async () => {
-            if (db && userData && userData.id) {
-                try {
-                    // Get fresh data from Firebase to confirm
-                    const userDoc = await db.collection('users').doc(userData.id).get();
-                    if (userDoc.exists) {
-                        const serverData = userDoc.data();
-                        if (Math.abs((serverData.balance || 0) - (userData.balance || 0)) > 0.01) {
-                            console.log("🔄 Balance mismatch detected, syncing...");
-                            userData.balance = serverData.balance;
-                            saveUserToLocalStorage(userData.id, userData);
-                            updateAllPagesUI();
-                        }
-                    }
-                } catch (syncError) {
-                    console.error("❌ Sync error:", syncError);
-                }
-            }
-        }, 1000);
-        
         return userData;
         
     } catch (error) {
         console.error("❌ Update error:", error);
-        // Still update local data on error
         Object.assign(userData, updates);
         saveUserToLocalStorage(userData.id, userData);
         updateAllPagesUI();
         return userData;
+    }
+}
+
+// ✅ FIXED Save withdraw to Firebase - ACTUALLY DEDUCTS MONEY
+async function saveWithdrawToFirebase(amount, accountNumber, method) {
+    try {
+        const user = getUserData();
+        if (!user) {
+            throw new Error('User data not available');
+        }
+        
+        if (!db) {
+            throw new Error('Firebase not available');
+        }
+        
+        // ✅ FIRST: Get current balance from Firebase
+        const userRef = db.collection('users').doc(user.id);
+        const userDoc = await userRef.get();
+        
+        if (!userDoc.exists) {
+            throw new Error('User not found in database');
+        }
+        
+        const currentUserData = userDoc.data();
+        const currentBalance = currentUserData.balance || 0;
+        
+        // Check if user has enough balance
+        if (currentBalance < amount) {
+            throw new Error(`Insufficient balance. Available: ${currentBalance}, Requested: ${amount}`);
+        }
+        
+        // Calculate new balance after withdrawal
+        const newBalance = currentBalance - amount;
+        
+        console.log("💰 Withdrawal Processing:");
+        console.log("- User ID:", user.id);
+        console.log("- Current Balance:", currentBalance);
+        console.log("- Withdraw Amount:", amount);
+        console.log("- New Balance:", newBalance);
+        
+        // ✅ UPDATE USER BALANCE IN FIREBASE FIRST
+        await userRef.update({
+            balance: newBalance,
+            last_active: new Date().toISOString()
+        });
+        
+        console.log("✅ Balance updated in Firebase");
+        
+        // ✅ THEN: Save withdrawal record
+        const withdrawData = {
+            user_id: user.id,
+            user_name: user.first_name || 'ইউজার',
+            amount: parseFloat(amount),
+            account_number: accountNumber,
+            method: method,
+            status: 'pending',
+            requested_at: new Date().toISOString(),
+            processed_at: null,
+            transaction_id: `TX${Date.now()}`,
+            previous_balance: currentBalance,
+            new_balance: newBalance
+        };
+        
+        await db.collection('withdrawals').add(withdrawData);
+        
+        // ✅ Save transaction record
+        await db.collection('transactions').add({
+            user_id: user.id,
+            type: 'withdrawal_request',
+            amount: parseFloat(amount),
+            description: `${method} উত্তোলন রিকোয়েস্ট - ${accountNumber}`,
+            timestamp: new Date().toISOString(),
+            status: 'pending',
+            previous_balance: currentBalance,
+            new_balance: newBalance
+        });
+        
+        console.log("✅ Withdraw request saved to Firebase");
+        
+        // ✅ Update local user data to match Firebase
+        if (userData && userData.id === user.id) {
+            userData.balance = newBalance;
+            userData.last_active = new Date().toISOString();
+            saveUserToLocalStorage(user.id, userData);
+            console.log("✅ Local user data updated");
+        }
+        
+        // ✅ Force UI update
+        updateAllPagesUI();
+        
+        return true;
+        
+    } catch (error) {
+        console.error("❌ Error saving withdrawal:", error);
+        throw error;
     }
 }
 
@@ -678,50 +804,6 @@ function updateAllPagesUI() {
     updateResetTimers();
 }
 
-// Save withdraw to Firebase
-async function saveWithdrawToFirebase(amount, accountNumber, method) {
-    try {
-        const user = getUserData();
-        if (!user) {
-            throw new Error('User data not available');
-        }
-        
-        if (!db) {
-            throw new Error('Firebase not available');
-        }
-        
-        const withdrawData = {
-            user_id: user.id,
-            user_name: user.first_name || 'ইউজার',
-            amount: parseFloat(amount),
-            account_number: accountNumber,
-            method: method,
-            status: 'pending',
-            requested_at: new Date().toISOString(),
-            processed_at: null,
-            transaction_id: `TX${Date.now()}`
-        };
-        
-        await db.collection('withdrawals').add(withdrawData);
-        
-        await db.collection('transactions').add({
-            user_id: user.id,
-            type: 'withdrawal_request',
-            amount: parseFloat(amount),
-            description: `${method} উত্তোলন রিকোয়েস্ট`,
-            timestamp: new Date().toISOString(),
-            status: 'pending'
-        });
-        
-        console.log("✅ Withdraw request saved to Firebase");
-        return true;
-        
-    } catch (error) {
-        console.error("❌ Error saving withdrawal:", error);
-        throw error;
-    }
-}
-
 // Helper functions
 function getUserData() {
     return userData;
@@ -937,3 +1019,4 @@ window.updateAllPagesUI = updateAllPagesUI;
 window.copySupportReferral = copyReferralLink;
 window.refreshUserDataFromFirebase = refreshUserDataFromFirebase;
 window.forceUpdateAllPagesUI = forceUpdateAllPagesUI;
+window.syncBalanceFromFirebase = syncBalanceFromFirebase;

@@ -1,10 +1,9 @@
-
-// app-firebase-pumpkin.js - মিষ্টি কুমড়া বট - SIMPLIFIED LOCALSTORAGE VERSION
-console.log("🎃 মিষ্টি কুমড়া বট লোড হচ্ছে... (LocalStorage)");
+// app-firebase-pumpkin.js - মিষ্টি কুমড়া বট - AUTO REFERRAL BONUS ON REFRESH
+console.log("🎃 মিষ্টি কুমড়া বট লোড হচ্ছে... (Firebase)");
 
 const tg = window.Telegram?.WebApp;
 
-// Firebase Configuration (for reference only)
+// Firebase Configuration
 const firebaseConfig = {
   apiKey: "AIzaSyCDrb8fC3-nmDWAj85T9bqSaMKB9otnRgQ",
   authDomain: "reyrtyreyrty.firebaseapp.com",
@@ -20,7 +19,7 @@ let db = null;
 let userData = null;
 let currentUserId = null;
 
-// ✅ SIMPLE Referral Link Format
+// ✅ CORRECT Referral Link Format
 function generateReferralLink() {
     if (!userData || !userData.id) return 'https://t.me/mishti_kumra_bot';
     
@@ -95,79 +94,94 @@ function saveUserToLocalStorage(userId, data) {
     }
 }
 
-// ✅ SIMPLE LOCALSTORAGE WITHDRAWAL FUNCTION
-async function saveWithdrawToFirebase(amount, accountNumber, method) {
+// ✅ FORCE REFRESH USER DATA FROM FIREBASE
+async function refreshUserDataFromFirebase() {
+    if (!userData || !userData.id || !db) return false;
+    
     try {
-        const user = getUserData();
-        if (!user) {
-            throw new Error('User data not available');
+        console.log("🔄 Force refreshing user data from Firebase...");
+        
+        // Get latest data from Firebase
+        const userDoc = await db.collection('users').doc(userData.id).get();
+        
+        if (userDoc.exists) {
+            const serverData = userDoc.data();
+            
+            // Merge with local data (preserve any local changes)
+            const updatedData = { ...userData, ...serverData };
+            
+            // Ensure ID is preserved
+            updatedData.id = userData.id;
+            
+            // Update global userData
+            userData = updatedData;
+            
+            // Save to localStorage
+            saveUserToLocalStorage(userData.id, userData);
+            
+            console.log("✅ User data refreshed from Firebase");
+            console.log("- New Balance:", userData.balance);
+            
+            return true;
         }
+    } catch (error) {
+        console.error("❌ Refresh from Firebase error:", error);
+    }
+    return false;
+}
+
+// ✅ FORCE BALANCE SYNC FROM FIREBASE
+async function syncBalanceFromFirebase() {
+    if (!userData || !userData.id || !db) return false;
+    
+    try {
+        console.log("🔄 Syncing balance from Firebase...");
         
-        console.log("💰 Starting withdrawal...");
-        console.log("- User ID:", user.id);
-        console.log("- Current Balance:", user.balance);
-        console.log("- Withdraw Amount:", amount);
+        const userDoc = await db.collection('users').doc(userData.id).get();
         
-        // Check if user has enough balance
-        if (user.balance < amount) {
-            throw new Error(`Insufficient balance. Available: ${user.balance}, Requested: ${amount}`);
-        }
-        
-        // Calculate new balance
-        const newBalance = user.balance - amount;
-        
-        console.log("- New Balance after withdrawal:", newBalance);
-        
-        // ✅ 1. Update local user data FIRST
-        user.balance = newBalance;
-        user.last_active = new Date().toISOString();
-        
-        // ✅ 2. Save to localStorage IMMEDIATELY
-        saveUserToLocalStorage(user.id, user);
-        
-        // ✅ 3. Update global userData
-        userData = user;
-        
-        console.log("✅ Balance deducted from localStorage");
-        
-        // ✅ 4. Try to save to Firebase if available (optional)
-        if (db) {
-            try {
-                const withdrawData = {
-                    user_id: user.id,
-                    user_name: user.first_name || 'ইউজার',
-                    amount: parseFloat(amount),
-                    account_number: accountNumber,
-                    method: method,
-                    status: 'pending',
-                    requested_at: new Date().toISOString(),
-                    previous_balance: user.balance + amount, // Add back to get original
-                    new_balance: newBalance
-                };
-                
-                await db.collection('withdrawals').add(withdrawData);
-                
-                // Update user in Firebase too
-                await db.collection('users').doc(user.id).update({
-                    balance: newBalance,
-                    last_active: new Date().toISOString()
-                });
-                
-                console.log("✅ Also saved to Firebase");
-            } catch (firebaseError) {
-                console.error("⚠️ Firebase save failed, but localStorage saved:", firebaseError);
+        if (userDoc.exists) {
+            const serverData = userDoc.data();
+            const serverBalance = serverData.balance || 0;
+            const localBalance = userData.balance || 0;
+            
+            console.log("💸 Balance Comparison:");
+            console.log("- Local Balance:", localBalance);
+            console.log("- Server Balance:", serverBalance);
+            
+            if (Math.abs(serverBalance - localBalance) > 0.01) {
+                console.log("⚠️ Balance mismatch detected!");
+                userData.balance = serverBalance;
+                saveUserToLocalStorage(userData.id, userData);
+                updateAllPagesUI();
+                console.log("✅ Balance synced from Firebase");
+                return true;
             }
         }
+        return false;
+    } catch (error) {
+        console.error("❌ Balance sync error:", error);
+        return false;
+    }
+}
+
+// ✅ UPDATE ALL PAGES WITH FORCE REFRESH
+async function forceUpdateAllPagesUI() {
+    if (!userData || !userData.id) return;
+    
+    try {
+        // Try to get latest data from Firebase first
+        if (db) {
+            await refreshUserDataFromFirebase();
+        }
         
-        // ✅ 5. Update UI immediately
+        // Then update UI
         updateAllPagesUI();
         
-        console.log("✅ Withdrawal completed successfully");
-        return true;
-        
+        console.log("✅ Force UI update completed");
     } catch (error) {
-        console.error("❌ Withdrawal error:", error);
-        throw error;
+        console.error("❌ Force update error:", error);
+        // Fallback to normal update
+        updateAllPagesUI();
     }
 }
 
@@ -189,7 +203,7 @@ async function initializeUserData() {
         if (localUserData && localUserData.id === currentUserId) {
             userData = localUserData;
             console.log("📱 লোকাল স্টোরেজ থেকে ডেটা লোড হয়েছে");
-            console.log("💰 Current balance:", userData.balance);
+            console.log("💰 Local balance:", userData.balance);
         }
         
         if (!db) {
@@ -209,15 +223,27 @@ async function initializeUserData() {
             if (userDoc.exists) {
                 const serverData = userDoc.data();
                 
+                // Check if server data is newer
+                const serverTime = new Date(serverData.last_active || 0).getTime();
+                const localTime = userData ? new Date(userData.last_active || 0).getTime() : 0;
+                
                 if (userData) {
-                    // Merge data, prioritize local balance
-                    userData = { ...serverData, ...userData };
+                    // Use server data if it's newer or if balances differ significantly
+                    if (serverTime > localTime || Math.abs((serverData.balance || 0) - (userData.balance || 0)) > 10) {
+                        console.log("🔄 Server data is newer, using server data");
+                        userData = { ...serverData, ...userData };
+                    } else {
+                        // Keep local data but update with any missing fields
+                        userData = { ...serverData, ...userData };
+                    }
                 } else {
                     userData = serverData;
                 }
+                
                 userData.id = currentUserId;
                 
                 console.log("✅ Firebase থেকে ইউজার ডেটা লোড হয়েছে");
+                console.log("💰 Firebase balance:", userData.balance);
             } else {
                 if (!userData) {
                     userData = createNewUser(currentUserId);
@@ -239,7 +265,11 @@ async function initializeUserData() {
         // Process referral
         await processReferralWithStartApp();
         
-        updateAllPagesUI();
+        // ✅ AUTO ADD REFERRAL BONUS ON REFRESH
+        await autoAddReferralBonus();
+        
+        // Force update UI with latest data
+        await forceUpdateAllPagesUI();
         hideLoading();
         
     } catch (error) {
@@ -287,36 +317,52 @@ function createFallbackUser(userId) {
     };
 }
 
-// ✅ SIMPLE Update user data - LOCALSTORAGE ONLY
+// ✅ FIXED Update user data - ENSURES BALANCE SYNC
 async function updateUserData(updates) {
     if (!userData || !userData.id) return userData;
     
     try {
         console.log("🔄 Updating user data:", updates);
         
-        // Apply updates
+        // Special handling for balance updates
+        if (updates.balance !== undefined) {
+            console.log("💰 Balance update requested:", updates.balance);
+            
+            // Apply balance update to local data
+            userData.balance = updates.balance;
+            userData.last_active = new Date().toISOString();
+            
+            // Save to localStorage
+            saveUserToLocalStorage(userData.id, userData);
+            
+            // Update Firebase if available
+            if (db) {
+                await db.collection('users').doc(userData.id).update({
+                    balance: updates.balance,
+                    last_active: new Date().toISOString()
+                });
+                console.log("✅ Balance updated in Firebase");
+            }
+            
+            // Update UI immediately
+            updateAllPagesUI();
+            return userData;
+        }
+        
+        // Normal updates for other fields
         Object.assign(userData, updates);
         userData.last_active = new Date().toISOString();
         
-        // ✅ Save to localStorage FIRST and IMMEDIATELY
         saveUserToLocalStorage(userData.id, userData);
         
-        console.log("✅ Local storage updated. New balance:", userData.balance);
-        
-        // Try Firebase if available (optional)
         if (db) {
-            try {
-                const firebaseData = { ...updates };
-                firebaseData.last_active = new Date().toISOString();
-                
-                await db.collection('users').doc(userData.id).update(firebaseData);
-                console.log("✅ Firebase also updated");
-            } catch (firebaseError) {
-                console.error("⚠️ Firebase update failed:", firebaseError);
-            }
+            const firebaseData = { ...updates };
+            firebaseData.last_active = new Date().toISOString();
+            
+            await db.collection('users').doc(userData.id).update(firebaseData);
+            console.log("✅ Firebase আপডেট সফল");
         }
         
-        // Update UI
         updateAllPagesUI();
         return userData;
         
@@ -329,7 +375,186 @@ async function updateUserData(updates) {
     }
 }
 
-// Process referral
+// ✅ FIXED Save withdraw to Firebase - ACTUALLY DEDUCTS MONEY
+async function saveWithdrawToFirebase(amount, accountNumber, method) {
+    try {
+        const user = getUserData();
+        if (!user) {
+            throw new Error('User data not available');
+        }
+        
+        if (!db) {
+            throw new Error('Firebase not available');
+        }
+        
+        // ✅ FIRST: Get current balance from Firebase
+        const userRef = db.collection('users').doc(user.id);
+        const userDoc = await userRef.get();
+        
+        if (!userDoc.exists) {
+            throw new Error('User not found in database');
+        }
+        
+        const currentUserData = userDoc.data();
+        const currentBalance = currentUserData.balance || 0;
+        
+        // Check if user has enough balance
+        if (currentBalance < amount) {
+            throw new Error(`Insufficient balance. Available: ${currentBalance}, Requested: ${amount}`);
+        }
+        
+        // Calculate new balance after withdrawal
+        const newBalance = currentBalance - amount;
+        
+        console.log("💰 Withdrawal Processing:");
+        console.log("- User ID:", user.id);
+        console.log("- Current Balance:", currentBalance);
+        console.log("- Withdraw Amount:", amount);
+        console.log("- New Balance:", newBalance);
+        
+        // ✅ UPDATE USER BALANCE IN FIREBASE FIRST
+        await userRef.update({
+            balance: newBalance,
+            last_active: new Date().toISOString()
+        });
+        
+        console.log("✅ Balance updated in Firebase");
+        
+        // ✅ THEN: Save withdrawal record
+        const withdrawData = {
+            user_id: user.id,
+            user_name: user.first_name || 'ইউজার',
+            amount: parseFloat(amount),
+            account_number: accountNumber,
+            method: method,
+            status: 'pending',
+            requested_at: new Date().toISOString(),
+            processed_at: null,
+            transaction_id: `TX${Date.now()}`,
+            previous_balance: currentBalance,
+            new_balance: newBalance
+        };
+        
+        await db.collection('withdrawals').add(withdrawData);
+        
+        // ✅ Save transaction record
+        await db.collection('transactions').add({
+            user_id: user.id,
+            type: 'withdrawal_request',
+            amount: parseFloat(amount),
+            description: `${method} উত্তোলন রিকোয়েস্ট - ${accountNumber}`,
+            timestamp: new Date().toISOString(),
+            status: 'pending',
+            previous_balance: currentBalance,
+            new_balance: newBalance
+        });
+        
+        console.log("✅ Withdraw request saved to Firebase");
+        
+        // ✅ Update local user data to match Firebase
+        if (userData && userData.id === user.id) {
+            userData.balance = newBalance;
+            userData.last_active = new Date().toISOString();
+            saveUserToLocalStorage(user.id, userData);
+            console.log("✅ Local user data updated");
+        }
+        
+        // ✅ Force UI update
+        updateAllPagesUI();
+        
+        return true;
+        
+    } catch (error) {
+        console.error("❌ Error saving withdrawal:", error);
+        throw error;
+    }
+}
+
+// ✅ AUTO ADD REFERRAL BONUS ON REFRESH (SILENT)
+async function autoAddReferralBonus() {
+    if (!userData || !db) return;
+    
+    console.log("🤫 সাইলেন্ট রেফারেল বোনাস চেক...");
+    
+    try {
+        // Get all referrals where I am the referrer
+        const referralsQuery = await db.collection('referrals')
+            .where('referred_by', '==', userData.id)
+            .get();
+        
+        const myReferralsCount = referralsQuery.size;
+        console.log(`📊 আমার রেফারেল: ${myReferralsCount} জন`);
+        
+        if (myReferralsCount === 0) {
+            console.log("📭 কোনো রেফারেল নেই");
+            return;
+        }
+        
+        // Get my current data from Firebase
+        const myDoc = await db.collection('users').doc(userData.id).get();
+        
+        if (!myDoc.exists) {
+            console.log("❌ আমার ডেটা পাওয়া যায়নি");
+            return;
+        }
+        
+        const myData = myDoc.data();
+        const myCurrentBalance = myData.balance || 0;
+        const myCurrentReferrals = myData.total_referrals || 0;
+        
+        // Each referral should give me 100 Taka
+        const totalBonusShouldHave = myReferralsCount * 100;
+        
+        // Starting balance: 50 Taka
+        // Each referral: +100 Taka
+        const minimumExpectedBalance = 50 + totalBonusShouldHave;
+        
+        console.log(`💰 বর্তমান ব্যালেন্স: ${myCurrentBalance}`);
+        console.log(`💰 হওয়া উচিত ব্যালেন্স: ${minimumExpectedBalance}`);
+        
+        // Check if missing bonus
+        if (myCurrentBalance < minimumExpectedBalance) {
+            const missingBonus = minimumExpectedBalance - myCurrentBalance;
+            console.log(`💰 মিসিং বোনাস: ${missingBonus} টাকা`);
+            
+            if (missingBonus > 0) {
+                // Update my balance SILENTLY (no notification)
+                const newBalance = myCurrentBalance + missingBonus;
+                const newTotalIncome = (myData.total_income || 0) + missingBonus;
+                
+                await db.collection('users').doc(userData.id).update({
+                    balance: newBalance,
+                    total_income: newTotalIncome,
+                    total_referrals: myReferralsCount
+                });
+                
+                // Update local data
+                userData.balance = newBalance;
+                userData.total_income = newTotalIncome;
+                userData.total_referrals = myReferralsCount;
+                saveUserToLocalStorage(userData.id, userData);
+                
+                console.log(`✅ ${missingBonus} টাকা যোগ করা হয়েছে (সাইলেন্ট)`);
+                
+                // Update UI silently
+                updateAllPagesUI();
+            }
+        } else {
+            // Just update referral count if different
+            if (myReferralsCount !== myCurrentReferrals) {
+                await updateUserData({
+                    total_referrals: myReferralsCount
+                });
+                console.log(`✅ রেফারেল কাউন্ট আপডেট: ${myReferralsCount}`);
+            }
+        }
+        
+    } catch (error) {
+        console.error("❌ অটো বোনাস এরর:", error);
+    }
+}
+
+// ✅ FIXED Process referral - BOTH USERS GET BONUS
 async function processReferralWithStartApp() {
     if (!userData || !db) return;
     
@@ -386,6 +611,7 @@ async function processReferralWithStartApp() {
         
         const referrer = referrerDoc.data();
         console.log("✅ রেফারার ভ্যালিড:", referrer.first_name);
+        console.log("💰 রেফারার ব্যালেন্স:", referrer.balance);
         
         // Check if referral already exists
         const existingRefQuery = await db.collection('referrals')
@@ -425,12 +651,12 @@ async function processReferralWithStartApp() {
         
         console.log("✅ নতুন ইউজারকে ৫০ টাকা বোনাস দেওয়া হয়েছে");
         
-        // ✅ STEP 3: Update REFERRER (Person A - gets 100 Taka)
+        // ✅ STEP 3: Update REFERRER (Person A - gets 100 Taka) - FIXED!
         // Calculate referrer's new balance
         const referrerNewBalance = (referrer.balance || 0) + 100;
         const referrerNewTotalIncome = (referrer.total_income || 0) + 100;
         
-        // Get referrer's referral count
+        // Get referrer's referral count AFTER adding new referral
         const referrerRefQuery = await db.collection('referrals')
             .where('referred_by', '==', referrerUserId)
             .get();
@@ -495,6 +721,25 @@ async function processReferralWithStartApp() {
         setTimeout(() => {
             showNotification('🎉 রেফারেল সফল! আপনি ৫০ টাকা বোনাস পেয়েছেন!', 'success');
         }, 1500);
+        
+        // ✅ STEP 7: If referrer is currently logged in, update their local data
+        if (currentUserId === referrerUserId) {
+            console.log("🔄 Referrer is currently logged in, updating their local data...");
+            // Get updated referrer data
+            const updatedReferrerDoc = await db.collection('users').doc(referrerUserId).get();
+            if (updatedReferrerDoc.exists) {
+                const updatedReferrerData = updatedReferrerDoc.data();
+                // Update local referrer data
+                if (userData && userData.id === referrerUserId) {
+                    userData.balance = updatedReferrerData.balance;
+                    userData.total_referrals = updatedReferrerData.total_referrals;
+                    userData.total_income = updatedReferrerData.total_income;
+                    saveUserToLocalStorage(userData.id, userData);
+                    updateAllPagesUI();
+                    console.log("✅ Referrer local data updated with 100 Taka bonus");
+                }
+            }
+        }
         
     } catch (error) {
         console.error('❌ রেফারেল এরর:', error);
@@ -694,6 +939,96 @@ function fallbackUI() {
     });
 }
 
+// ✅ ADD PAGE LOAD SYNC FUNCTION
+async function syncUserDataOnPageLoad() {
+    if (!userData || !userData.id) return;
+    
+    console.log("🔄 Syncing user data on page load...");
+    
+    try {
+        if (db) {
+            // Get fresh data from Firebase
+            const userDoc = await db.collection('users').doc(userData.id).get();
+            if (userDoc.exists) {
+                const serverData = userDoc.data();
+                
+                // Update local data with server data
+                Object.assign(userData, serverData);
+                userData.id = userData.id; // Preserve ID
+                
+                // Save to localStorage
+                saveUserToLocalStorage(userData.id, userData);
+                
+                console.log("✅ Synced from Firebase on page load");
+                console.log("💰 Synced balance:", userData.balance);
+                
+                // Update UI
+                updateAllPagesUI();
+            }
+        }
+    } catch (error) {
+        console.error("❌ Page load sync error:", error);
+    }
+}
+
+// ✅ ADD FUNCTION TO CHECK REFERRAL BONUSES
+async function checkAndFixReferralBonuses() {
+    if (!userData || !userData.id || !db) return;
+    
+    console.log("🔍 Checking referral bonuses...");
+    
+    try {
+        // Get all referrals where I am the referrer
+        const referralsQuery = await db.collection('referrals')
+            .where('referred_by', '==', userData.id)
+            .get();
+        
+        const myReferralsCount = referralsQuery.size;
+        
+        if (myReferralsCount > 0) {
+            console.log(`📊 I have ${myReferralsCount} referrals`);
+            
+            // Get my current data
+            const myDoc = await db.collection('users').doc(userData.id).get();
+            if (myDoc.exists) {
+                const myData = myDoc.data();
+                const expectedBonus = myReferralsCount * 100;
+                const startingBalance = 50;
+                const minimumExpectedBalance = startingBalance + expectedBonus;
+                
+                console.log(`💰 My current balance: ${myData.balance || 0}`);
+                console.log(`💰 Expected minimum balance: ${minimumExpectedBalance}`);
+                
+                if ((myData.balance || 0) < minimumExpectedBalance) {
+                    const missingBonus = minimumExpectedBalance - (myData.balance || 0);
+                    console.log(`⚠️ Missing ${missingBonus} Taka in referral bonuses!`);
+                    
+                    // Auto add missing bonus
+                    const newBalance = (myData.balance || 0) + missingBonus;
+                    const newTotalIncome = (myData.total_income || 0) + missingBonus;
+                    
+                    await db.collection('users').doc(userData.id).update({
+                        balance: newBalance,
+                        total_income: newTotalIncome,
+                        total_referrals: myReferralsCount
+                    });
+                    
+                    // Update local data
+                    userData.balance = newBalance;
+                    userData.total_income = newTotalIncome;
+                    userData.total_referrals = myReferralsCount;
+                    saveUserToLocalStorage(userData.id, userData);
+                    
+                    console.log(`✅ Added ${missingBonus} Taka referral bonus`);
+                    updateAllPagesUI();
+                }
+            }
+        }
+    } catch (error) {
+        console.error("❌ Error checking referral bonuses:", error);
+    }
+}
+
 // Initialize everything
 document.addEventListener('DOMContentLoaded', async function() {
     console.log("🎯 Starting app initialization...");
@@ -721,6 +1056,12 @@ document.addEventListener('DOMContentLoaded', async function() {
                 setTimeout(async () => {
                     await initializeUserData();
                     
+                    // Sync on page load
+                    await syncUserDataOnPageLoad();
+                    
+                    // Check and fix referral bonuses
+                    await checkAndFixReferralBonuses();
+                    
                     setInterval(() => {
                         if (userData) {
                             updateAllPagesUI();
@@ -733,6 +1074,14 @@ document.addEventListener('DOMContentLoaded', async function() {
                             updateAllPagesUI();
                         }
                     }, 300000);
+                    
+                    // Check referral bonuses every 5 minutes
+                    setInterval(async () => {
+                        if (userData) {
+                            await checkAndFixReferralBonuses();
+                        }
+                    }, 300000);
+                    
                 }, 1000);
                 
             } catch (error) {
@@ -758,3 +1107,7 @@ window.showNotification = showNotification;
 window.hideLoading = hideLoading;
 window.updateAllPagesUI = updateAllPagesUI;
 window.copySupportReferral = copyReferralLink;
+window.refreshUserDataFromFirebase = refreshUserDataFromFirebase;
+window.forceUpdateAllPagesUI = forceUpdateAllPagesUI;
+window.syncBalanceFromFirebase = syncBalanceFromFirebase;
+window.checkAndFixReferralBonuses = checkAndFixReferralBonuses;
